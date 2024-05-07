@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "outDir": "build",
+
+    "alwaysStrict": true,
+    "allowUnreachableCode": false,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "removeComments": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts"],
+}
