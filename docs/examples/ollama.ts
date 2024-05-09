@@ -1,8 +1,23 @@
+/**
+ *
+ * Demo requirements:
+ *
+ * - Postgres DB credentials with admin rights
+ * - Local Ollama running with mistral model pulled/
+ *
+ *
+ *
+ */
+
 import fs from 'fs'
 import pg from 'pg'
 import path from 'path'
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
-import * as PgRag from '../index.js'
+import * as PgRag from '../../src/index.js'
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const embeddings = new OllamaEmbeddings({
   model: "mistral",
@@ -19,10 +34,15 @@ async function run() {
   });
 
   const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
+
   const pgRag = await PgRag.init({dbPool: pool, embeddings, resetDB: true})
-  await pgRag.saveDocument({data: pdf})
-  const res = await pgRag.rag({prompt: 'Tell me about Sparse Vector Representation'})
-  console.log(res)
+  await pgRag.saveDocument({data: pdf, fileName: 'example.pdf'})
+
+  setTimeout(async () => {
+    const res = await pgRag.search({prompt: 'Tell me about Sparse Vector Representation'})
+    console.log(res)
+    process.exit()
+  }, 5000)
 }
 
 run()

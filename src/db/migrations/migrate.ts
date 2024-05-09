@@ -31,4 +31,5 @@ export async function migrate(pool:pg.Pool, targetMigrationStep:string|undefined
   } finally {
     await client?.release();
   }
+  logger.info({ targetMigrationStep }, 'Migration completed');
 }

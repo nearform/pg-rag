@@ -41,10 +41,13 @@
   "dependencies": {
     "@langchain/community": "^0.0.53",
     "@langchain/openai": "^0.0.28",
+    "@nearform/sql": "^1.10.5",
     "@types/pdf-parse": "^1.1.4",
     "langchain": "^0.1.36",
+    "officeparser": "^4.1.1",
     "pdf-parse": "^1.1.1",
     "pg": "^8.11.5",
+    "pg-boss": "^9.0.3",
     "pino": "^9.0.0",
     "postgrator": "^7.2.0"
   }
