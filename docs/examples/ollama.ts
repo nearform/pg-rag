@@ -48,6 +48,10 @@ async function run() {
     resetDB: true
   })
   await pgRag.saveDocument({ data: pdf, fileName: 'example.pdf' })
+  const summarization = await pgRag.summarize(
+    fs.readFileSync(path.join(__dirname, './book.txt'), 'utf-8')
+  )
+  console.log('Summary', summarization)
 
   setTimeout(async () => {
     const res = await pgRag.search({
