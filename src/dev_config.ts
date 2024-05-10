@@ -8,3 +8,8 @@ export const db = {
   user: process.env.DB_USER || 'pgrag',
   password: process.env.DB_PASSWORD,
 }
+
+export const ollama = {
+  model: process.env.OLLAMA_MODEL || 'mistral',
+  baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+}
