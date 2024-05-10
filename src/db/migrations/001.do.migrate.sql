@@ -8,6 +8,7 @@ CREATE TABLE documents (
   name TEXT NOT NULL,
   raw_content bytea,
   content TEXT,
+  summary TEXT,
   metadata JSONB
 );
 

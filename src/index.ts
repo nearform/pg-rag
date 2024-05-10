@@ -1,19 +1,20 @@
 import pg from 'pg'
-import { Embeddings } from "@langchain/core/embeddings"
+import { Embeddings } from '@langchain/core/embeddings'
 import officeparser from 'officeparser'
+import { LLM } from 'langchain/llms/base'
 import { migrate } from './db/migrations/migrate.js'
 import { pino } from 'pino'
 import * as db from './db/documents.js'
 import { init as initJobQueue } from './jobs/index.js'
 import { getVectorStore } from './db/vector/index.js'
-import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
+import { fileTypeFromBuffer, FileTypeResult } from 'file-type'
 
+const logger = pino({ name: 'pg-rag' })
 
-const logger = pino({name: 'pg-rag'})
-
-interface PgRagOptions {
-  dbPool: pg.Pool,
+interface PgRagOptions<T> {
+  dbPool: pg.Pool
   embeddings: Embeddings
+  chatModel?: T
   resetDB?: boolean // Resets the DB on inititalization
 }
 
@@ -26,50 +27,63 @@ interface RagArgs {
   prompt: string
 }
 
-function isOfficeFileType(fileType: FileTypeResult|undefined) {
-  return fileType && ['docx', 'pptx', 'xlsx', 'odt', 'odp', 'ods', 'pdf'].includes(fileType.ext.toLowerCase())
+function isOfficeFileType(fileType: FileTypeResult | undefined) {
+  return (
+    fileType &&
+    ['docx', 'pptx', 'xlsx', 'odt', 'odp', 'ods', 'pdf'].includes(
+      fileType.ext.toLowerCase()
+    )
+  )
 }
 
-
-export async function init(options:PgRagOptions) {
+export async function init<T extends LLM>(options: PgRagOptions<T>) {
   logger.info('Initializing')
 
-  if(options.resetDB) {
+  if (options.resetDB) {
     await migrate(options.dbPool, '0')
   }
   await migrate(options.dbPool, '1')
 
-  const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
+  const jobQueue = await initJobQueue(
+    options.dbPool,
+    options.embeddings,
+    options.chatModel
+  )
   const vectorStore = getVectorStore(options.dbPool, options.embeddings)
 
-  const saveDocument = async (args: SaveArgs):Promise<string|null> => {
+  const saveDocument = async (args: SaveArgs): Promise<string | null> => {
     try {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
-      let content:string|null = null
-      if(isOfficeFileType(fileType)) {
+      let content: string | null = null
+      if (isOfficeFileType(fileType)) {
         content = await officeparser.parseOfficeAsync(args.data)
       } else if (fileType) {
-        throw new Error(`Unsupported file of mime type "${fileType.mime}" with extension "${fileType.ext}". Check the documentation for what types of files are supported by this library.`)
+        throw new Error(
+          `Unsupported file of mime type "${fileType.mime}" with extension "${fileType.ext}". Check the documentation for what types of files are supported by this library.`
+        )
       } else {
         content = args.data.toString('utf8')
       }
       logger.debug('Document parsed')
+
       const doc = await db.saveDocument(options.dbPool, {
         name: args.name,
         raw_content: args.data.toString('base64'),
         content: content,
+        summary: '',
         metadata: {}
       })
-      return await jobQueue.processDocument({documentId: doc.id})
-    } catch(err) {
+
+      return await jobQueue.processDocument({ documentId: doc.id })
+    } catch (err) {
       logger.error(err)
       throw err
     }
   }
 
-  const search = async(args: RagArgs ) => {
-    return await vectorStore.similaritySearch(args.prompt, 1);
+  const search = async (args: RagArgs) => {
+    return await vectorStore.similaritySearch(args.prompt, 1)
   }
 
   const shutdown = async () => {

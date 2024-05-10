@@ -42,7 +42,7 @@ const refinePrompt = new PromptTemplate({
   inputVariables: ['existing_answer', 'text']
 })
 
-const DEFAULT_CHUNK_SIZE = 4000
+const DEFAULT_CHUNK_SIZE = 2000
 const DEFAULT_CHUNK_OVERLAP = 2
 
 const DEFAULT_CONFIG: SummarizationConfig = {
@@ -73,6 +73,7 @@ export async function summarizeText(
     chunkOverlap
   })
   const docs = await textSplitter.createDocuments([text])
+
   const chain = loadSummarizationChain(chatModel, chainParams)
   return await chain.call({ input_documents: docs })
 }
