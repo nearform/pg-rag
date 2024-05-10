@@ -27,6 +27,15 @@ PG Rag is not meant to provide a full fledged advanced RAG for any document and 
 
 pg-rag uses the (Officeparser)[https://github.com/harshankur/officeParser] library to parse files. Lookup this library to know what kind of files are supported.
 
+## Development & running tests
+
+Pre-requisites:
+- PostgreSQL with the pgvector extension available/installed
+- Ollama running locally with `mistral` model installed
+
+Copy and adapt the `.env.example` file to `.env.dev` and adapt it.
+Ensure your PostgreSQL database user is able to install the pgvector extension or pre-install it.
+
 ## Improvements/TODO
 
 - Summarize documents and vectorize that

@@ -6,23 +6,30 @@ import { pino } from 'pino'
 import * as db from './db/documents.js'
 import { init as initJobQueue } from './jobs/index.js'
 import { getVectorStore } from './db/vector/index.js'
+import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
+
 
 const logger = pino({name: 'pg-rag'})
 
 interface PgRagOptions {
   dbPool: pg.Pool,
   embeddings: Embeddings
-  resetDB?: boolean // Resets the DB everytime
+  resetDB?: boolean // Resets the DB on inititalization
 }
 
 interface SaveArgs {
   data: Buffer
-  fileName: string
+  name: string
 }
 
 interface RagArgs {
   prompt: string
 }
+
+function isOfficeFileType(fileType: FileTypeResult|undefined) {
+  return fileType && ['docx', 'pptx', 'xlsx', 'odt', 'odp', 'ods', 'pdf'].includes(fileType.ext.toLowerCase())
+}
+
 
 export async function init(options:PgRagOptions) {
   logger.info('Initializing')
@@ -38,27 +45,43 @@ export async function init(options:PgRagOptions) {
   const saveDocument = async (args: SaveArgs):Promise<string|null> => {
     try {
       logger.debug('Parsing document')
-      const pdfContent = await officeparser.parseOfficeAsync(args.data)
+      const fileType = await fileTypeFromBuffer(args.data)
+      let content:string|null = null
+      if(isOfficeFileType(fileType)) {
+        content = await officeparser.parseOfficeAsync(args.data)
+      } else if (fileType) {
+        throw new Error(`Unsupported file of mime type "${fileType.mime}" with extension "${fileType.ext}". Check the documentation for what types of files are supported by this library.`)
+      } else {
+        content = args.data.toString('utf8')
+      }
       logger.debug('Document parsed')
       const doc = await db.saveDocument(options.dbPool, {
-        name: args.fileName,
+        name: args.name,
         raw_content: args.data.toString('base64'),
-        content: pdfContent,
+        content: content,
         metadata: {}
       })
       return await jobQueue.processDocument({documentId: doc.id})
     } catch(err) {
       logger.error(err)
+      throw err
     }
-    return null
   }
 
   const search = async(args: RagArgs ) => {
     return await vectorStore.similaritySearch(args.prompt, 1);
   }
+
+  const shutdown = async () => {
+    await jobQueue.pgBoss.stop()
+  }
+
   logger.info('Initialized')
   return {
     saveDocument,
-    search
+    search,
+    waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
+    pgBoss: jobQueue.pgBoss,
+    shutdown
   }
 }

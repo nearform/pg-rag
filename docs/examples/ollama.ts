@@ -3,9 +3,7 @@
  * Demo requirements:
  *
  * - Postgres DB credentials with admin rights
- * - Local Ollama running with mistral model pulled/
- *
- *
+ * - Local Ollama running with mistral model pulled
  *
  */
 
@@ -36,13 +34,13 @@ async function run() {
   const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
 
   const pgRag = await PgRag.init({dbPool: pool, embeddings, resetDB: true})
-  await pgRag.saveDocument({data: pdf, fileName: 'example.pdf'})
+  const jobId = await pgRag.saveDocument({data: pdf, name: 'example.pdf'})
 
-  setTimeout(async () => {
-    const res = await pgRag.search({prompt: 'Tell me about Sparse Vector Representation'})
-    console.log(res)
-    process.exit()
-  }, 5000)
+  await pgRag.waitForDocumentProcessed(jobId!)
+
+  const res = await pgRag.search({prompt: 'Tell me about Sparse Vector Representation'})
+  console.log('Search response', res)
+  await pgRag.shutdown()
 }
 
 run()
