@@ -5,6 +5,40 @@ import { pino } from 'pino'
 import * as processDocs from './job_process_document.js'
 import { Embeddings } from "@langchain/core/embeddings"
 
+interface Job {
+  id: string,
+  state: 'created' | 'archive' | 'active' | 'retry' | 'expired' | 'failed' | 'cancelled' | 'archive' | 'completed'
+}
+
+function getJobEndedBooleanStatus(job:Job) {
+  if (['expired', 'failed', 'cancelled'].includes(job.state)) {
+    return false
+  } else if (['archive', 'completed'].includes(job.state)) {
+    return true
+  } else {
+    return null
+  }
+}
+
+function jobCheck(pgBoss:PGBoss, jobId:string, resolve:(success:boolean)=>void, reject: (err:Error) => void, nextDelay=500) {
+  pgBoss.getJobById(jobId).then(job => {
+    if(!job) {
+      return reject(new Error('Could not find job with this id'))
+    }
+
+    const jobSuccessful = getJobEndedBooleanStatus(job)
+    if (jobSuccessful === false) {
+      resolve(false)
+    } else if (jobSuccessful === true) {
+      resolve(true)
+    } else {
+      setTimeout(() => {
+        jobCheck(pgBoss, jobId, resolve, reject, Math.min(nextDelay + nextDelay/2, 5000))
+      }, nextDelay)
+    }
+  }).catch(reject)
+}
+
 export async function init(pool:pg.Pool, embeddings: Embeddings, ) {
 
   const pgBoss = new PGBoss({
@@ -26,12 +60,21 @@ export async function init(pool:pg.Pool, embeddings: Embeddings, ) {
     return await pgBoss.send(queueName, jobData)
   }
 
-  pgBoss.work<processDocs.JobData>(processDocs.QUEUE_NAME, processDocs.createJobProcessor({pool, embeddings, }))
+  pgBoss.work<processDocs.JobData>(processDocs.QUEUE_NAME, processDocs.createJobProcessor({pool, embeddings, pgBoss}))
   const processDocument = async (doc:processDocs.JobData) => {
-    return await queueJob<processDocs.JobData>(processDocs.QUEUE_NAME, doc)
+    const jobId = await queueJob<processDocs.JobData>(processDocs.QUEUE_NAME, doc)
+    return jobId
+  }
+
+  const waitForDocumentProcessed = (jobId:string):Promise<boolean> => {
+    return new Promise<boolean>((resolve, reject) => {
+      jobCheck(pgBoss, jobId, resolve, reject)
+    })
   }
 
   return {
     processDocument,
+    waitForDocumentProcessed,
+    pgBoss
   }
 }

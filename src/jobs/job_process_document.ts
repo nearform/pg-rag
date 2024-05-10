@@ -5,6 +5,7 @@ import { pino } from 'pino'
 import pg from 'pg'
 import * as db from '../db/documents.js'
 import { getVectorStore } from "../db/vector/index.js"
+import PgBoss from 'pg-boss'
 
 
 const logger = pino({name: 'job_process_document'})
@@ -15,10 +16,10 @@ export interface JobData {
 
 export const QUEUE_NAME = 'process_document'
 
-export const createJobProcessor = (args: {pool:pg.Pool, embeddings:Embeddings}) => {
+export const createJobProcessor = (args: {pool:pg.Pool, embeddings:Embeddings, pgBoss:PgBoss}) => {
     return async(job:Job<JobData>) => {
       try {
-        logger.info({msg: 'Job received2', jobId: job.id, documentId: job.data.documentId})
+        logger.info({msg: 'Job received', jobId: job.id, documentId: job.data.documentId})
 
         const vectorStore = getVectorStore(args.pool, args.embeddings)
 
