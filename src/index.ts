@@ -1,85 +1,87 @@
-import { Embeddings } from '@langchain/core/embeddings'
-import { LLM } from 'langchain/llms/base'
-import officeparser from 'officeparser'
 import pg from 'pg'
+import { Embeddings } from "@langchain/core/embeddings"
+import officeparser from 'officeparser'
+import { migrate } from './db/migrations/migrate.js'
 import { pino } from 'pino'
 import * as db from './db/documents.js'
-import { migrate } from './db/migrations/migrate.js'
-import { getVectorStore } from './db/vector/index.js'
 import { init as initJobQueue } from './jobs/index.js'
-import { SummarizationConfig, summarizeText } from './jobs/summary.js'
+import { getVectorStore } from './db/vector/index.js'
+import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
 
-const logger = pino({ name: 'pg-rag' })
 
-export interface PgRagOptions<T> {
-  dbPool: pg.Pool
-  chatModel?: T
+const logger = pino({name: 'pg-rag'})
+
+interface PgRagOptions {
+  dbPool: pg.Pool,
   embeddings: Embeddings
-  resetDB?: boolean // Resets the DB everytime
+  resetDB?: boolean // Resets the DB on inititalization
 }
 
 interface SaveArgs {
   data: Buffer
-  fileName: string
+  name: string
 }
 
 interface RagArgs {
   prompt: string
 }
 
-export async function init<T extends LLM>({
-  dbPool,
-  embeddings,
-  chatModel,
-  resetDB
-}: PgRagOptions<T>) {
+function isOfficeFileType(fileType: FileTypeResult|undefined) {
+  return fileType && ['docx', 'pptx', 'xlsx', 'odt', 'odp', 'ods', 'pdf'].includes(fileType.ext.toLowerCase())
+}
+
+
+export async function init(options:PgRagOptions) {
   logger.info('Initializing')
 
-  if (resetDB) {
-    await migrate(dbPool, '0')
+  if(options.resetDB) {
+    await migrate(options.dbPool, '0')
   }
-  await migrate(dbPool, '1')
+  await migrate(options.dbPool, '1')
 
-  const jobQueue = await initJobQueue(dbPool, embeddings)
-  const vectorStore = getVectorStore(dbPool, embeddings)
+  const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
+  const vectorStore = getVectorStore(options.dbPool, options.embeddings)
 
-  const saveDocument = async (args: SaveArgs): Promise<string | null> => {
+  const saveDocument = async (args: SaveArgs):Promise<string|null> => {
     try {
       logger.debug('Parsing document')
-      const pdfContent = await officeparser.parseOfficeAsync(args.data)
+      const fileType = await fileTypeFromBuffer(args.data)
+      let content:string|null = null
+      if(isOfficeFileType(fileType)) {
+        content = await officeparser.parseOfficeAsync(args.data)
+      } else if (fileType) {
+        throw new Error(`Unsupported file of mime type "${fileType.mime}" with extension "${fileType.ext}". Check the documentation for what types of files are supported by this library.`)
+      } else {
+        content = args.data.toString('utf8')
+      }
       logger.debug('Document parsed')
-      const doc = await db.saveDocument(dbPool, {
-        name: args.fileName,
+      const doc = await db.saveDocument(options.dbPool, {
+        name: args.name,
         raw_content: args.data.toString('base64'),
-        content: pdfContent,
+        content: content,
         metadata: {}
       })
-      return await jobQueue.processDocument({ documentId: doc.id })
-    } catch (err) {
+      return await jobQueue.processDocument({documentId: doc.id})
+    } catch(err) {
       logger.error(err)
+      throw err
     }
-    return null
   }
 
-  const search = async (args: RagArgs) => {
-    return await vectorStore.similaritySearch(args.prompt, 1)
+  const search = async(args: RagArgs ) => {
+    return await vectorStore.similaritySearch(args.prompt, 1);
   }
 
-  const summarize = async (text: string, config?: SummarizationConfig) => {
-    if (chatModel == null) {
-      throw new Error(
-        'LLM is not defined. Please provide a valid LLM instance for summarization.'
-      )
-    }
-    logger.debug('Summarizing text')
-    return await summarizeText(text, chatModel, config)
+  const shutdown = async () => {
+    await jobQueue.pgBoss.stop()
   }
 
   logger.info('Initialized')
-
   return {
     saveDocument,
     search,
-    summarize
+    waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
+    pgBoss: jobQueue.pgBoss,
+    shutdown
   }
 }
