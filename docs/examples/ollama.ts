@@ -14,22 +14,14 @@ import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import * as PgRag from '../../src/index.js'
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import * as config from '../../src/dev_config.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const embeddings = new OllamaEmbeddings({
-  model: "mistral",
-  baseUrl: "http://127.0.0.1:11434",
-});
+const embeddings = new OllamaEmbeddings(config.ollama);
 
 async function run() {
-  const pool = new pg.Pool({
-    host: 'localhost',
-    port: 5436,
-    database: 'pgrag',
-    user: 'pgrag',
-    password: 'pgrag',
-  });
+  const pool = new pg.Pool(config.db);
 
   const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
 
