@@ -19,7 +19,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const embeddings = new OllamaEmbeddings({
   model: "mistral",
-  baseUrl: "http://127.0.0.1:11434",
+  baseUrl: "http://192.168.0.179:11434",
 });
 
 async function run() {
@@ -33,7 +33,7 @@ async function run() {
 
   const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
 
-  const pgRag = await PgRag.init({dbPool: pool, embeddings, resetDB: true})
+  const pgRag = await PgRag.init({dbPool: pool, embeddings, resetDB: false})
   const jobId = await pgRag.saveDocument({data: pdf, name: 'example.pdf'})
 
   await pgRag.waitForDocumentProcessed(jobId!)

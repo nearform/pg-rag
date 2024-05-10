@@ -13,7 +13,7 @@ CREATE TABLE documents (
 
 CREATE TABLE document_chunks (
   id BIGSERIAL PRIMARY KEY,
-  embedding vector(4096),
+  -- embedding vector(XX), -- This column is dynamically inserted at initialization step to match the model's embeddings size
   content TEXT,
   metadata JSONB
 );

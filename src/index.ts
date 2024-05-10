@@ -5,7 +5,7 @@ import { migrate } from './db/migrations/migrate.js'
 import { pino } from 'pino'
 import * as db from './db/documents.js'
 import { init as initJobQueue } from './jobs/index.js'
-import { getVectorStore } from './db/vector/index.js'
+import { getVectorStore, insertVectorColumn } from './db/vector/index.js'
 import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
 
 
@@ -38,6 +38,7 @@ export async function init(options:PgRagOptions) {
     await migrate(options.dbPool, '0')
   }
   await migrate(options.dbPool, '1')
+  await insertVectorColumn(options.dbPool, options.embeddings)
 
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
   const vectorStore = getVectorStore(options.dbPool, options.embeddings)
