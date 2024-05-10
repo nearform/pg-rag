@@ -42,7 +42,7 @@ async function run() {
 
   const res = await pgRag.search({prompt: 'Tell me about Sparse Vector Representation'})
   console.log('Search response', res)
-  process.exit() // workers prevent auto-shutdown
+  await pgRag.shutdown()
 }
 
 run()
