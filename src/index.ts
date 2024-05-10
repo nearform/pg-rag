@@ -79,6 +79,7 @@ export async function init<T extends LLM>({
 
   return {
     saveDocument,
-    search
+    search,
+    summarize
   }
 }
