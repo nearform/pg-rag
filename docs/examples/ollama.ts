@@ -3,9 +3,7 @@
  * Demo requirements:
  *
  * - Postgres DB credentials with admin rights
- * - Local Ollama running with mistral model pulled/
- *
- *
+ * - Local Ollama running with mistral model pulled
  *
  */
 
@@ -20,7 +18,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const embeddings = new OllamaEmbeddings({
-  model: "llama3",
+  model: "mistral",
   baseUrl: "http://127.0.0.1:11434",
 });
 
