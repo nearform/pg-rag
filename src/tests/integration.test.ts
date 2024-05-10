@@ -5,14 +5,11 @@ import assert from 'assert'
 import { init } from '../index.js'
 import pg from 'pg'
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
-import { db } from './config.js'
+import * as config from '../dev_config.js'
 
-const embeddings = new OllamaEmbeddings({
-  model: "mistral",
-  baseUrl: "http://localhost:11434",
-});
+const embeddings = new OllamaEmbeddings(config.ollama);
 
-const pool = new pg.Pool(db)
+const pool = new pg.Pool(config.db)
 
 
 describe('Integration test', async () => {
