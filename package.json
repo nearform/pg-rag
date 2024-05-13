@@ -45,7 +45,7 @@
     "@nearform/sql": "^1.10.5",
     "@types/pdf-parse": "^1.1.4",
     "file-type": "^19.0.0",
-    "langchain": "^0.1.36",
+    "langchain": "^0.1.37",
     "officeparser": "^4.1.1",
     "pdf-parse": "^1.1.1",
     "pg": "^8.11.5",
