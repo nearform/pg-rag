@@ -17,3 +17,5 @@ CREATE TABLE document_chunks (
   content TEXT,
   metadata JSONB
 );
+
+CREATE INDEX ON document_chunks USING GIN (to_tsvector('english', content));

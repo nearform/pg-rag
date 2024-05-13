@@ -5,25 +5,23 @@ import { migrate } from './db/migrations/migrate.js'
 import { pino } from 'pino'
 import * as db from './db/documents.js'
 import { init as initJobQueue } from './jobs/index.js'
-import { getVectorStore, insertVectorColumn } from './db/vector/index.js'
+import { insertVectorColumn } from './db/vector/index.js'
 import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
-
+import { LLM } from 'langchain/llms/base'
+import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
 
 const logger = pino({name: 'pg-rag'})
 
 interface PgRagOptions {
   dbPool: pg.Pool,
   embeddings: Embeddings
+  model: LLM
   resetDB?: boolean // Resets the DB on inititalization
 }
 
 interface SaveArgs {
   data: Buffer
   name: string
-}
-
-interface RagArgs {
-  prompt: string
 }
 
 function isOfficeFileType(fileType: FileTypeResult|undefined) {
@@ -41,7 +39,6 @@ export async function init(options:PgRagOptions) {
   await insertVectorColumn(options.dbPool, options.embeddings)
 
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
-  const vectorStore = getVectorStore(options.dbPool, options.embeddings)
 
   const saveDocument = async (args: SaveArgs):Promise<string|null> => {
     try {
@@ -69,8 +66,20 @@ export async function init(options:PgRagOptions) {
     }
   }
 
-  const search = async(args: RagArgs ) => {
-    return await vectorStore.similaritySearch(args.prompt, 1);
+  const retrieve = async(args: RagArgs) => {
+    return hybridRetrieve(args, {
+      dbPool: options.dbPool,
+      embeddings: options.embeddings,
+      model: options.model
+    })
+  }
+
+  const rag = async(args: RagArgs) => {
+    return doRag(args, {
+      dbPool: options.dbPool,
+      embeddings: options.embeddings,
+      model: options.model
+    })
   }
 
   const shutdown = async () => {
@@ -80,7 +89,8 @@ export async function init(options:PgRagOptions) {
   logger.info('Initialized')
   return {
     saveDocument,
-    search,
+    retrieve,
+    rag,
     waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
     pgBoss: jobQueue.pgBoss,
     shutdown
