@@ -11,18 +11,18 @@ interface Document {
   metadata: object
 }
 
-export async function saveDocument(connPool:pg.Pool, doc:Document):Promise<{id:number}> {
+export async function saveDocument(connPool:pg.Pool, doc:Document, collection:string):Promise<{id:number}> {
   const client = await connPool.connect()
-  const res = await client.query(SQL`INSERT INTO documents (name, content, raw_content, metadata)
+  const res = await client.query(SQL`INSERT INTO ${collection} (name, content, raw_content, metadata)
     VALUES (${doc.name}, ${doc.content}, ${doc.raw_content}, ${doc.metadata})
     RETURNING id`)
   await client.release()
   return res.rows[0]
 }
 
-export async function getDocument(connPool:pg.Pool, doc:{id: number}):Promise<Document|undefined> {
+export async function getDocument(connPool:pg.Pool, doc:{id: number},collection:string):Promise<Document|undefined> {
   const client = await connPool.connect()
-  const res = await client.query(SQL`SELECT * FROM documents WHERE id = ${doc.id}`)
+  const res = await client.query(SQL`SELECT * FROM ${collection} WHERE id = ${doc.id}`)
   await client.release()
   return res.rows ? res.rows[0] : undefined
 }

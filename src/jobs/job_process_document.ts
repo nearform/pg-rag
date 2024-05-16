@@ -24,7 +24,7 @@ export const createJobProcessor = (args: {pool:pg.Pool, embeddings:Embeddings, p
         const vectorStore = getVectorStore(args.pool, args.embeddings)
 
         logger.info('Fetching document from database')
-        const doc = await db.getDocument(args.pool, {id: job.data.documentId})
+        const doc = await db.getDocument(args.pool, {id: job.data.documentId}, 'documents')
         if(!doc) {
           logger.error({msg: 'Job failed', error: 'Could not retrieve document from the database', jobId: job.id, documentId: job.data.documentId})
           return
