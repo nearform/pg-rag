@@ -1,0 +1,10 @@
+DOCUMENT:
+{documents}
+
+QUESTION:
+{query}
+
+INSTRUCTIONS:
+Answer the users QUESTION using the DOCUMENT text above.
+Keep your answer ground in the facts of the DOCUMENT.
+If the DOCUMENT doesn’t contain the facts to answer the QUESTION return "I don't have enough information to answer your query"

@@ -15,8 +15,12 @@ import * as PgRag from '../../src/index.js'
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as config from '../../src/dev_config.js'
+import { Ollama } from "@langchain/community/llms/ollama";
+
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const ollamaLlm = new Ollama(config.ollama);
 
 const embeddings = new OllamaEmbeddings(config.ollama);
 
@@ -25,12 +29,12 @@ async function run() {
 
   const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
 
-  const pgRag = await PgRag.init({dbPool: pool, embeddings, resetDB: true})
+  const pgRag = await PgRag.init({dbPool: pool, embeddings, model: ollamaLlm, resetDB: true})
   const jobId = await pgRag.saveDocument({data: pdf, name: 'example.pdf'})
 
   await pgRag.waitForDocumentProcessed(jobId!)
 
-  const res = await pgRag.search({prompt: 'Tell me about Sparse Vector Representation'})
+  const res = await pgRag.rag({prompt: 'Tell me about Sparse Vector Representation'})
   console.log('Search response', res)
   await pgRag.shutdown()
 }

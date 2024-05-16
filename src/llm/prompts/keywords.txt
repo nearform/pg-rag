@@ -1,0 +1,1 @@
+Extract keywords from the following LLM query. Only answer with the keywords each separated by a comma: {query}
