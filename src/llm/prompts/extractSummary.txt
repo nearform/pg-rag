@@ -1,1 +1,0 @@
-You are a summary agent. You will receive text and return a detailed summary of the text provided. 

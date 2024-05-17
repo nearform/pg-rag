@@ -11,18 +11,38 @@ interface Document {
   metadata: object
 }
 
-export async function saveDocument(connPool:pg.Pool, doc:Document, collection:string):Promise<{id:number}> {
+export async function saveDocument(connPool:pg.Pool, doc:Document):Promise<{id:number}> {
+
   const client = await connPool.connect()
-  const res = await client.query(SQL`INSERT INTO ${collection} (name, content, raw_content, metadata)
-    VALUES (${doc.name}, ${doc.content}, ${doc.raw_content}, ${doc.metadata})
+  const res = await client.query(SQL`INSERT INTO documents (name, content, raw_content, metadata)
+    VALUES (${doc.name}, ${doc.content}, ${doc.raw_content}, ${JSON.stringify(doc.metadata)}::jsonb)
     RETURNING id`)
   await client.release()
   return res.rows[0]
 }
 
-export async function getDocument(connPool:pg.Pool, doc:{id: number},collection:string):Promise<Document|undefined> {
+export async function getDocument(connPool:pg.Pool, doc:{id?: number, metadata?:{fileId: string}}):Promise<Document|undefined> {
   const client = await connPool.connect()
-  const res = await client.query(SQL`SELECT * FROM ${collection} WHERE id = ${doc.id}`)
+  if(doc.id){
+    const res = await client.query(SQL`SELECT * FROM documents WHERE id = ${doc.id}`)
+    await client.release()
+    return res.rows ? res.rows[0] : undefined
+  }
+  else  if(doc.metadata){
+    const res = await client.query(SQL`SELECT * FROM documents WHERE metadata @> '[ { "fileId": ${doc.metadata.fileId}} }]';`)
+    await client.release()
+    return res.rows ? res.rows[0] : undefined
+  }
+  else{
+    console.log('Unable to retrieve document')
+    return undefined
+  }
+  
+}
+
+export async function getSummary(connPool:pg.Pool, doc:{id: number}):Promise<Document|undefined> {
+  const client = await connPool.connect()
+  const res = await client.query(SQL`SELECT * FROM summary WHERE id = ${doc.id}`)
   await client.release()
   return res.rows ? res.rows[0] : undefined
 }

@@ -8,6 +8,7 @@ import * as PgRag from '../../src/index.js'
 // import { fileURLToPath } from 'url';
 import * as config from '../../src/dev_config.js'
 import { Ollama } from "@langchain/community/llms/ollama";
+import { OpenAI } from '@langchain/openai';
 
 program
   .option('-q, --query <query>')
@@ -19,12 +20,13 @@ program.parse();
 // const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const options = program.opts();
 const ollamaLlm = new Ollama(config.ollama);
+const openAI = new OpenAI(config.gpt4o)
 
 const embeddings = new OllamaEmbeddings(config.ollama);
 
 async function run() {
   const pool = new pg.Pool(config.db);
-  const pgRag = await PgRag.init({dbPool: pool, embeddings, model: ollamaLlm, resetDB: options.resetDB})
+  const pgRag = await PgRag.init({dbPool: pool, embeddings, imageConversionModel:openAI, chatModel: ollamaLlm, resetDB: options.resetDB})
 
   if(options.files) {
     for(const file of options.files) {

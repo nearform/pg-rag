@@ -13,3 +13,9 @@ export const ollama = {
   model: process.env.OLLAMA_MODEL || 'mistral',
   baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
 }
+
+export const gpt4o = {
+  model: 'gpt-4o',
+  temperature: 0.9,
+  apiKey: process.env.OPENAI_API_KEY
+}
