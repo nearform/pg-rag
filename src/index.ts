@@ -59,7 +59,7 @@ export async function init(options:PgRagOptions) {
       }
       logger.debug('Document parsed')
 
-      await storeData(args, docText)
+      return await storeData(args, docText)
       } catch(err) {
         logger.error(err)
         throw err
@@ -72,10 +72,9 @@ export async function init(options:PgRagOptions) {
       name: args.name,
       raw_content: args.data.toString('base64'),
       content:response,
-      metadata: {fileId: args.name}
+      metadata: {"fileId": args.name}
     })
-    console.log(doc)
-    await jobQueue.processDocument({documentId: doc.id})
+    return await jobQueue.processDocument({documentId: doc.id})
 
 
   }
@@ -97,7 +96,7 @@ export async function init(options:PgRagOptions) {
   }
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   const summary = async(fileId:string):Promise< Record<string, any> |undefined>=> {
-    const doc = await db.getDocument(options.dbPool, {metadata:{fileId:fileId}})
+    const doc = await db.getDocument(options.dbPool, {name:fileId})
     if(!doc || !doc.content){
       console.log('unable to retrieve document')
       return undefined

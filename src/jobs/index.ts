@@ -21,6 +21,7 @@ function getJobEndedBooleanStatus(job:Job) {
 }
 
 function jobCheck(pgBoss:PGBoss, jobId:string, resolve:(success:boolean)=>void, reject: (err:Error) => void, nextDelay=500) {
+  console.log('jobId',jobId)
   pgBoss.getJobById(jobId).then(job => {
     if(!job) {
       return reject(new Error('Could not find job with this id'))

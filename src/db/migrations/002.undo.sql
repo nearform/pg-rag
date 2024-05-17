@@ -1,5 +1,0 @@
-
-DROP TABLE IF EXISTS summary_chunks;
-DROP TABLE IF EXISTS summary;
-
--- DROP EXTENSION IF EXISTS vector;

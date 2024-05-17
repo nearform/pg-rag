@@ -35,9 +35,9 @@ async function run() {
 
   await pgRag.waitForDocumentProcessed(jobId!)
   const res = await pgRag.rag({prompt: 'Tell me about Sparse Vector Representation'})
-  console.log('Search response', res)
+  console.log('Search response: ', res)
   const summary = await pgRag.summary('example.pdf')
-  console.log('Summary response', summary)
+  console.log('Summary response: ', summary)
 
   await pgRag.shutdown()
 }

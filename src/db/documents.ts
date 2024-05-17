@@ -21,15 +21,20 @@ export async function saveDocument(connPool:pg.Pool, doc:Document):Promise<{id:n
   return res.rows[0]
 }
 
-export async function getDocument(connPool:pg.Pool, doc:{id?: number, metadata?:{fileId: string}}):Promise<Document|undefined> {
+export async function getDocument(connPool:pg.Pool, doc:{id?: number,name?:string, metadata?:{fileId: string}}):Promise<Document|undefined> {
   const client = await connPool.connect()
   if(doc.id){
     const res = await client.query(SQL`SELECT * FROM documents WHERE id = ${doc.id}`)
     await client.release()
     return res.rows ? res.rows[0] : undefined
   }
-  else  if(doc.metadata){
-    const res = await client.query(SQL`SELECT * FROM documents WHERE metadata @> '[ { "fileId": ${doc.metadata.fileId}} }]';`)
+  else if (doc.name){
+    const res = await client.query(SQL`SELECT * FROM documents WHERE name = ${doc.name}`)
+    await client.release()
+    return res.rows ? res.rows[0] : undefined
+  }
+  else if(doc.metadata){
+    const res = await client.query(SQL`SELECT * FROM documents WHERE metadata->> 'fileId' = '${doc.metadata.fileId}';`)
     await client.release()
     return res.rows ? res.rows[0] : undefined
   }
