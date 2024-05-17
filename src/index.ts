@@ -8,9 +8,9 @@ import { insertVectorColumn } from './db/vector/index.js'
 import { fileTypeFromBuffer } from 'file-type';
 import { LLM } from 'langchain/llms/base'
 import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
-import { getDocumentDetails, summarizeText} from './llm/openai.js'
-import { ChainValues } from 'langchain/schema'
-import { OpenAI } from '@langchain/openai'
+import { getDocumentDetails} from './llm/openai.js'
+import OpenAI  from 'openai'
+import { summarizeText } from './llm/summary.js'
 
 const logger = pino({name: 'pg-rag'})
 
@@ -42,20 +42,24 @@ export async function init(options:PgRagOptions) {
     try {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
-      let responses: ChainValues| undefined
+     
+      let docText = "";
       if(fileType &&fileType.ext.toLowerCase() == 'pdf') {
-        responses = await getDocumentDetails(options.imageConversionModel,args.data)
-        if(!responses){
+        const chatCompletion = await getDocumentDetails(options.imageConversionModel,args.data)
+        for(const response of chatCompletion.choices){
+          docText += response.message.content
+        }
+        if(!chatCompletion || !chatCompletion.choices){
           throw new Error(`File was not processed correctly ${args.name}`)
         }
       } else if (fileType) {
         throw new Error(`Unsupported file of mime type "${fileType.mime}" with extension "${fileType.ext}". Check the documentation for what types of files are supported by this library.`)
       } else {
-        responses = {'output': args.data.toString('utf8')}
+        docText = args.data.toString('utf8')
       }
       logger.debug('Document parsed')
 
-      await storeData(args, responses['output'])
+      await storeData(args, docText)
       } catch(err) {
         logger.error(err)
         throw err
@@ -70,6 +74,7 @@ export async function init(options:PgRagOptions) {
       content:response,
       metadata: {fileId: args.name}
     })
+    console.log(doc)
     await jobQueue.processDocument({documentId: doc.id})
 
 

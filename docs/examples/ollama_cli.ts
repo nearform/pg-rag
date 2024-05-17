@@ -8,7 +8,7 @@ import * as PgRag from '../../src/index.js'
 // import { fileURLToPath } from 'url';
 import * as config from '../../src/dev_config.js'
 import { Ollama } from "@langchain/community/llms/ollama";
-import { OpenAI } from '@langchain/openai';
+import  OpenAI  from 'openai';
 
 program
   .option('-q, --query <query>')
