@@ -15,13 +15,11 @@ import * as PgRag from '../../src/index.js'
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as config from '../../src/dev_config.js'
-import { Ollama } from "@langchain/community/llms/ollama";
 import OpenAI from 'openai'
 
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ollamaLlm = new Ollama(config.ollama);
 
 const embeddings = new OllamaEmbeddings(config.ollama);
 const imageConversionModel = new OpenAI(config.gpt4o);
