@@ -1,7 +1,6 @@
-
 import pg from 'pg'
 import SQL from '@nearform/sql'
-import { PGVectorStore } from "@langchain/community/vectorstores/pgvector"
+import { PGVectorStore } from '@langchain/community/vectorstores/pgvector'
 
 interface Document {
   id?: number
@@ -11,44 +10,51 @@ interface Document {
   metadata: object
 }
 
-export async function saveDocument(connPool:pg.Pool, doc:Document):Promise<{id:number}> {
-
+export async function saveDocument(
+  connPool: pg.Pool,
+  doc: Document
+): Promise<{ id: number }> {
   const client = await connPool.connect()
-  const res = await client.query(SQL`INSERT INTO documents (name, content, raw_content, metadata)
+  const res =
+    await client.query(SQL`INSERT INTO documents (name, content, raw_content, metadata)
     VALUES (${doc.name}, ${doc.content}, ${doc.raw_content}, ${JSON.stringify(doc.metadata)}::jsonb)
     RETURNING id`)
   await client.release()
   return res.rows[0]
 }
 
-export async function getDocument(connPool:pg.Pool, doc:{id?: number,name?:string, metadata?:{fileId: string}}):Promise<Document|undefined> {
+export async function getDocument(
+  connPool: pg.Pool,
+  doc: { id?: number; name?: string; metadata?: { fileId: string } }
+): Promise<Document | undefined> {
   const client = await connPool.connect()
-  if(doc.id){
-    const res = await client.query(SQL`SELECT * FROM documents WHERE id = ${doc.id}`)
+  if (doc.id) {
+    const res = await client.query(
+      SQL`SELECT * FROM documents WHERE id = ${doc.id}`
+    )
     await client.release()
     return res.rows ? res.rows[0] : undefined
-  }
-  else if (doc.name){
-    const res = await client.query(SQL`SELECT * FROM documents WHERE name = ${doc.name}`)
+  } else if (doc.name) {
+    const res = await client.query(
+      SQL`SELECT * FROM documents WHERE name = ${doc.name}`
+    )
     await client.release()
     return res.rows ? res.rows[0] : undefined
-  }
-  else if(doc.metadata){
-    const res = await client.query(SQL`SELECT * FROM documents WHERE metadata->> 'fileId' = '${doc.metadata.fileId}';`)
+  } else if (doc.metadata) {
+    const res = await client.query(
+      SQL`SELECT * FROM documents WHERE metadata->> 'fileId' = '${doc.metadata.fileId}';`
+    )
     await client.release()
     return res.rows ? res.rows[0] : undefined
-  }
-  else{
+  } else {
     console.log('Unable to retrieve document')
     return undefined
   }
-  
 }
 
 interface SearchByKeywordOptions {
   limit: number
 }
-
 
 export interface DocumentChunkResult {
   id?: string
@@ -58,8 +64,12 @@ export interface DocumentChunkResult {
   type: 'vector' | 'keyword'
 }
 
-export async function searchByVector(vectorStore:PGVectorStore, query:string, k?:number):Promise<DocumentChunkResult[]> {
-  const vectorResults = await vectorStore.similaritySearchWithScore(query, k);
+export async function searchByVector(
+  vectorStore: PGVectorStore,
+  query: string,
+  k?: number
+): Promise<DocumentChunkResult[]> {
+  const vectorResults = await vectorStore.similaritySearchWithScore(query, k)
 
   return vectorResults.map(v => {
     return {
@@ -71,8 +81,11 @@ export async function searchByVector(vectorStore:PGVectorStore, query:string, k?
   })
 }
 
-
-export async function searchByKeyword(connPool:pg.Pool, keywords:string, options:SearchByKeywordOptions = {limit:5}):Promise<DocumentChunkResult[]> {
+export async function searchByKeyword(
+  connPool: pg.Pool,
+  keywords: string,
+  options: SearchByKeywordOptions = { limit: 5 }
+): Promise<DocumentChunkResult[]> {
   const client = await connPool.connect()
   const res = await client.query(SQL`
     SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
@@ -90,6 +103,3 @@ export async function searchByKeyword(connPool:pg.Pool, keywords:string, options
     }
   })
 }
-
-
-

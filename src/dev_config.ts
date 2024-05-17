@@ -6,12 +6,12 @@ export const db = {
   port: parseInt(process.env.DB_PORT || '5432', 10) || 5432,
   database: process.env.DB_NAME || 'pgrag',
   user: process.env.DB_USER || 'pgrag',
-  password: process.env.DB_PASSWORD,
+  password: process.env.DB_PASSWORD
 }
 
 export const ollama = {
   model: process.env.OLLAMA_MODEL || 'mistral',
-  baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+  baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434'
 }
 
 export const gpt4o = {

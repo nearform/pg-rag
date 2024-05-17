@@ -1,5 +1,4 @@
-export interface ProcessedText{
-    chunks: string,
-    summary:string
-  
-  }
+export interface ProcessedText {
+  chunks: string
+  summary: string
+}
