@@ -45,13 +45,6 @@ export async function getDocument(connPool:pg.Pool, doc:{id?: number,name?:strin
   
 }
 
-export async function getSummary(connPool:pg.Pool, doc:{id: number}):Promise<Document|undefined> {
-  const client = await connPool.connect()
-  const res = await client.query(SQL`SELECT * FROM summary WHERE id = ${doc.id}`)
-  await client.release()
-  return res.rows ? res.rows[0] : undefined
-}
-
 interface SearchByKeywordOptions {
   limit: number
 }
