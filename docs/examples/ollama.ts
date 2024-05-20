@@ -7,16 +7,15 @@
  *
  */
 
-import fs from 'fs'
+import fs from 'node:fs/promises'
+import path, { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pg from 'pg'
-import path from 'path'
-import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama'
-import * as PgRag from '../../src/index.js'
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import * as config from '../../src/dev_config.js'
 import OpenAI from 'openai'
+import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama'
 import { Ollama } from 'langchain/llms/ollama'
+import * as PgRag from '../../src/index.js'
+import * as config from '../../src/dev_config.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ollamaLlm = new Ollama(config.ollama)
@@ -25,7 +24,7 @@ const imageConversionModel = new OpenAI(config.gpt4o)
 async function run() {
   const pool = new pg.Pool(config.db)
 
-  const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
+  const pdf = await fs.readFile(path.join(__dirname, './example.pdf'))
 
   const pgRag = await PgRag.init({
     dbPool: pool,

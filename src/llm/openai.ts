@@ -1,17 +1,7 @@
 import { fromBuffer } from 'pdf2pic'
 import { ToBase64Response } from 'pdf2pic/dist/types/convertResponse.js'
-import { readFileSync } from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
 import OpenAI from 'openai'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const extractTextPrompt = readFileSync(
-  path.resolve(__dirname, './prompts/extractText.txt'),
-  'utf-8'
-)
+import { extractText } from './promptManipulation.js'
 
 export async function getDocumentDetails(
   model: OpenAI,
@@ -34,7 +24,7 @@ const getOpenAIMessageBody = (
   const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
     {
       type: 'text',
-      text: extractTextPrompt
+      text: extractText('./prompts/extractText.txt')
     }
   ]
   imageUrls.map(img => {
