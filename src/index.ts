@@ -11,6 +11,7 @@ import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
 import { getDocumentDetails } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
+import { RagResponse } from './helpers/models.js'
 
 const logger = pino({ name: 'pg-rag' })
 
@@ -97,9 +98,7 @@ export async function init(options: PgRagOptions) {
     })
   }
   /* eslint-disable  @typescript-eslint/no-explicit-any */
-  const summary = async (
-    fileId: string
-  ): Promise<Record<string, any> | undefined> => {
+  const summary = async (fileId: string): Promise<RagResponse | undefined> => {
     const doc = await db.getDocument(options.dbPool, { name: fileId })
     if (!doc || !doc.content) {
       console.log('unable to retrieve document')
@@ -110,7 +109,8 @@ export async function init(options: PgRagOptions) {
       options.chatModel,
       undefined
     )
-    return summaryText
+    const response = { content: summaryText['output_text'], sources: [fileId] }
+    return response
   }
 
   const shutdown = async () => {

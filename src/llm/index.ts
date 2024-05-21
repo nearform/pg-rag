@@ -6,6 +6,7 @@ import { Embeddings } from '@langchain/core/embeddings'
 import { getVectorStore } from '../db/vector/index.js'
 import { performance } from 'node:perf_hooks'
 import { makePrompt } from './promptManipulation.js'
+import { RagResponse } from '../helpers/models.js'
 
 /**
  * @param {string} prompt string input containing the query to be checked against the data
@@ -16,6 +17,10 @@ export interface RagArgs {
   prompt: string
   limit?: number
   k?: number
+}
+
+export interface MetadataObject {
+  fileId: string
 }
 
 interface SearchConf {
@@ -70,10 +75,23 @@ export async function hybridRetrieve(args: RagArgs, conf: SearchConf) {
   return rerankedResults
 }
 
-export async function rag(args: RagArgs, conf: SearchConf) {
+export async function rag(
+  args: RagArgs,
+  conf: SearchConf
+): Promise<RagResponse> {
   performance.measure('RAG')
 
   const searchResults = await hybridRetrieve(args, conf)
+
+  const sources = Array.from(
+    new Set(
+      searchResults.map(sr => {
+        const metadata = sr.metadata as MetadataObject
+        return metadata['fileId']
+      })
+    )
+  )
+
   const ragPrompt = makePrompt('./prompts/rag.txt', ['query', 'documents'])
 
   const compiledRagPrompt = await ragPrompt.format({
@@ -85,5 +103,5 @@ export async function rag(args: RagArgs, conf: SearchConf) {
   })
   const response = await conf.model.invoke(compiledRagPrompt)
 
-  return response
+  return { content: response, sources: sources }
 }

@@ -50,7 +50,7 @@ export const createJobProcessor = (args: {
       const splitDoc = await docSplitter.splitDocuments([
         {
           pageContent: doc?.content,
-          metadata: { parentDocumentId: doc.id }
+          metadata: { ...doc?.metadata, parentDocumentId: doc.id }
         }
       ])
 
