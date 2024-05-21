@@ -7,35 +7,42 @@
  *
  */
 
-import fs from 'fs'
+import fs from 'node:fs/promises'
+import path, { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pg from 'pg'
-import path from 'path'
-import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import OpenAI from 'openai'
+import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama'
+import { Ollama } from 'langchain/llms/ollama'
 import * as PgRag from '../../src/index.js'
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import * as config from '../../src/dev_config.js'
-import { Ollama } from "@langchain/community/llms/ollama";
 
-
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ollamaLlm = new Ollama(config.ollama);
-
-const embeddings = new OllamaEmbeddings(config.ollama);
-
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const ollamaLlm = new Ollama(config.ollama)
+const embeddings = new OllamaEmbeddings(config.ollama)
+const imageConversionModel = new OpenAI(config.gpt4o)
 async function run() {
-  const pool = new pg.Pool(config.db);
+  const pool = new pg.Pool(config.db)
 
-  const pdf = fs.readFileSync(path.join(__dirname, './example.pdf'))
+  const pdf = await fs.readFile(path.join(__dirname, './example.pdf'))
 
-  const pgRag = await PgRag.init({dbPool: pool, embeddings, model: ollamaLlm, resetDB: true})
-  const jobId = await pgRag.saveDocument({data: pdf, name: 'example.pdf'})
+  const pgRag = await PgRag.init({
+    dbPool: pool,
+    embeddings,
+    imageConversionModel: imageConversionModel,
+    chatModel: ollamaLlm,
+    resetDB: true
+  })
+  const jobId = await pgRag.saveDocument({ data: pdf, name: 'example.pdf' })
 
   await pgRag.waitForDocumentProcessed(jobId!)
+  const res = await pgRag.rag({
+    prompt: 'Tell me about Sparse Vector Representation'
+  })
+  console.log('Search response: ', res)
+  const summary = await pgRag.summary('example.pdf')
+  console.log('Summary response: ', summary)
 
-  const res = await pgRag.rag({prompt: 'Tell me about Sparse Vector Representation'})
-  console.log('Search response', res)
   await pgRag.shutdown()
 }
 

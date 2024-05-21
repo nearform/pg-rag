@@ -1,46 +1,63 @@
-import { program } from 'commander';
+import { program } from 'commander'
 
 import fs from 'fs'
 import pg from 'pg'
-// import path from 'path'
-import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama'
 import * as PgRag from '../../src/index.js'
-// import { fileURLToPath } from 'url';
 import * as config from '../../src/dev_config.js'
-import { Ollama } from "@langchain/community/llms/ollama";
-
+import { Ollama } from '@langchain/community/llms/ollama'
+import OpenAI from 'openai'
 program
   .option('-q, --query <query>')
   .option('-f, --files <path...>')
-  .option('-r, --resetDB');
+  .option('-r, --resetDB')
 
-program.parse();
+program.parse()
 
-// const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const options = program.opts();
-const ollamaLlm = new Ollama(config.ollama);
+jest.mock('openai', () => {
+  return {
+    OpenAI: jest.fn().mockImplementation(() => {
+      return {
+        chat: {
+          completions: {
+            create: jest.fn().mockResolvedValue('This is a mocked value')
+          }
+        }
+      }
+    })
+  }
+})
 
-const embeddings = new OllamaEmbeddings(config.ollama);
+const options = program.opts()
+const ollamaLlm = new Ollama(config.ollama)
+const openAI = new OpenAI() as jest.Mocked<OpenAI>
+
+const embeddings = new OllamaEmbeddings(config.ollama)
 
 async function run() {
-  const pool = new pg.Pool(config.db);
-  const pgRag = await PgRag.init({dbPool: pool, embeddings, model: ollamaLlm, resetDB: options.resetDB})
+  const pool = new pg.Pool(config.db)
+  const pgRag = await PgRag.init({
+    dbPool: pool,
+    embeddings,
+    imageConversionModel: openAI,
+    chatModel: ollamaLlm,
+    resetDB: options.resetDB
+  })
 
-  if(options.files) {
-    for(const file of options.files) {
+  if (options.files) {
+    for (const file of options.files) {
       const pdf = fs.readFileSync(file)
-      const jobId = await pgRag.saveDocument({data: pdf, name: file})
+      const jobId = await pgRag.saveDocument({ data: pdf, name: file })
       await pgRag.waitForDocumentProcessed(jobId!)
     }
   }
 
-  if(options.query) {
-    const res = await pgRag.rag({prompt: options.query})
+  if (options.query) {
+    const res = await pgRag.rag({ prompt: options.query })
     console.log(res)
   }
 
   await pgRag.shutdown()
-
 }
 
 run()
