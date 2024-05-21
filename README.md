@@ -3,8 +3,8 @@
 # PG RAG
 
 A library to make building LLM based POCs fast and easy.
-This library provides RAG capability for files (`.pdf`, `.ppt`/`.pptx`, `.doc`/`.docx` and text). It stores data in postgreSQL and manages the DB schema for you.
-
+This library provides RAG capability for .pdf files. It converts the files to images stores data in postgreSQL and manages the DB schema for you.
+The user can then rag query, search or summarize the data.
 
 ![Overview](./docs/overview.png)
 
@@ -18,18 +18,19 @@ npm i -S @nearform/pg-rag
 
 For usage see the (./docs/examples)[./docs/examples] folder
 
-
 ## Is PG Rag for you?
 
 PG Rag is not meant to provide a full fledged advanced RAG for any document and be able to answer any question.
 
 ## Supported files
 
-pg-rag uses the (Officeparser)[https://github.com/harshankur/officeParser] library to parse files. Lookup this library to know what kind of files are supported.
+pg-rag only supports PDF files
 
 ## Development & running tests
 
 Pre-requisites:
+
+- run the commands
 - PostgreSQL with the pgvector extension available/installed
 - Ollama running locally with `mistral` model installed
 
@@ -38,6 +39,7 @@ Ensure your PostgreSQL database user is able to install the pgvector extension o
 
 ## Improvements/TODO
 
+- run the command `brew install --use-gsc graphicsmagick` and the command `brew install ghostscript`
 - Summarize documents and vectorize that
 - Use Hybrid search
 - Add support for labels to categorize documents

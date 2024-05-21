@@ -14,7 +14,6 @@ export async function getDocumentDetails(
   const chatCompletion = await model.chat.completions.create(
     getOpenAIMessageBody(imageUrls)
   )
-  console.log(JSON.stringify(chatCompletion.choices))
   return chatCompletion
 }
 

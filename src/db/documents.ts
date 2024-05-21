@@ -47,7 +47,6 @@ export async function getDocument(
     await client.release()
     return res.rows ? res.rows[0] : undefined
   } else {
-    console.log('Unable to retrieve document')
     return undefined
   }
 }
