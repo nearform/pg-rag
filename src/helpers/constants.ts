@@ -5,7 +5,7 @@ export const FILE_EXT = [
   'xlsx',
   'ppt',
   'pptx',
-  'ost',
+  'msg',
   'html'
 ]
 
