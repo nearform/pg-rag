@@ -14,7 +14,7 @@ import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
 import { RagResponse, SaveArgs } from './helpers/models.js'
-import { FILE_EXT, OUTPUT_DIR } from './helpers/constants.js'
+import { FILE_EXT, MAIN_EXT, OUTPUT_DIR } from './helpers/constants.js'
 import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
 import { deleteDirectoryContents } from './helpers/utils.js'
 
@@ -47,10 +47,16 @@ export async function init(options: PgRagOptions) {
       let docText = ''
       if (fileType && FILE_EXT.indexOf(fileType.ext.toLowerCase())) {
         //make a pdf file and read from it
-        const pdfname = await convertToPdf(args)
-        const pdf = fs.readFileSync(path.join(OUTPUT_DIR, pdfname))
-        //make an image array
-        const imageUrls = await convertToImage({ data: pdf, name: pdfname })
+        const pdfArgs: SaveArgs = args
+        if (fileType.ext.toLowerCase() !== MAIN_EXT) {
+          pdfArgs.name = await convertToPdf(args)
+          pdfArgs.data = fs.readFileSync(path.join(OUTPUT_DIR, pdfArgs.name))
+          //make an image array
+        }
+        const imageUrls = await convertToImage({
+          data: pdfArgs.data,
+          name: pdfArgs.name
+        })
         //call openAI to get results
         const chatCompletion = await getOpenAIResult(
           options.imageConversionModel,

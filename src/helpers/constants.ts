@@ -6,7 +6,8 @@ export const FILE_EXT = [
   'ppt',
   'pptx',
   'msg',
-  'html'
+  'html',
+  'pdf'
 ]
 
 export const MAIN_EXT = 'pdf'
