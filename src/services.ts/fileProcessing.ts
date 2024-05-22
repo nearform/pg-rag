@@ -14,7 +14,6 @@ export async function convertToPdf(args: SaveArgs): Promise<string> {
   } catch (err) {
     console.log(`Unable to convert original file to pdf ${args.name}`)
   }
-  console.log(filename)
   return filename
 }
 
