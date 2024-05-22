@@ -24,7 +24,7 @@ PG Rag is not meant to provide a full fledged advanced RAG for any document and 
 
 ## Supported files
 
-pg-rag only supports PDF files
+This library provides RAG capability for files (`.pdf`, `.ppt`/`.pptx`, `.doc`/`.docx` and text).
 
 ## Development & running tests
 
@@ -39,7 +39,7 @@ Pre-requisites:
     brew install --use-gsc graphicsmagick
     brew install ghostscript
     brew install libreoffice
-    mkdir files (to locally store the pdfs while using the app)
+    mkdir files
 ```
 
 Copy and adapt the `.env.example` file to `.env.dev` and adapt it.
