@@ -50,6 +50,8 @@
     "@types/pdf-parse": "^1.1.4",
     "file-type": "^19.0.0",
     "langchain": "^0.1.36",
+    "libreoffice-convert": "^1.5.1",
+    "office-to-pdf": "^4.0.0",
     "officeparser": "^4.1.1",
     "pdf-parse": "^1.1.1",
     "pdf2pic": "^3.1.1",

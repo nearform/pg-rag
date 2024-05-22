@@ -1,4 +1,6 @@
 import pg from 'pg'
+import fs from 'node:fs'
+import path from 'node:path'
 import { Embeddings } from '@langchain/core/embeddings'
 import { migrate } from './db/migrations/migrate.js'
 import { pino } from 'pino'
@@ -8,10 +10,13 @@ import { insertVectorColumn } from './db/vector/index.js'
 import { fileTypeFromBuffer } from 'file-type'
 import { LLM } from 'langchain/llms/base'
 import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
-import { getDocumentDetails } from './llm/openai.js'
+import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
-import { RagResponse } from './helpers/models.js'
+import { RagResponse, SaveArgs } from './helpers/models.js'
+import { FILE_EXT, OUTPUT_DIR } from './helpers/constants.js'
+import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
+import { deleteDirectoryContents } from './helpers/utils.js'
 
 const logger = pino({ name: 'pg-rag' })
 
@@ -21,11 +26,6 @@ interface PgRagOptions {
   chatModel: LLM
   imageConversionModel: OpenAI
   resetDB?: boolean // Resets the DB on inititalization
-}
-
-interface SaveArgs {
-  data: Buffer
-  name: string
 }
 
 export async function init(options: PgRagOptions) {
@@ -40,21 +40,27 @@ export async function init(options: PgRagOptions) {
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
 
   const saveDocument = async (args: SaveArgs) => {
+    let chatAnswer = ''
     try {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
-
       let docText = ''
-      if (fileType && fileType.ext.toLowerCase() == 'pdf') {
-        const chatCompletion = await getDocumentDetails(
+      if (fileType && FILE_EXT.indexOf(fileType.ext.toLowerCase())) {
+        //make a pdf file and read from it
+        const pdfname = await convertToPdf(args)
+        const pdf = fs.readFileSync(path.join(OUTPUT_DIR, pdfname))
+        //make an image array
+        const imageUrls = await convertToImage({ data: pdf, name: pdfname })
+        //call openAI to get results
+        const chatCompletion = await getOpenAIResult(
           options.imageConversionModel,
-          args.data
+          imageUrls
         )
-        for (const response of chatCompletion.choices) {
-          docText += response.message.content
-        }
         if (!chatCompletion || !chatCompletion.choices) {
           throw new Error(`File was not processed correctly ${args.name}`)
+        }
+        for (const response of chatCompletion.choices) {
+          docText += response.message.content
         }
       } else if (fileType) {
         throw new Error(
@@ -65,11 +71,14 @@ export async function init(options: PgRagOptions) {
       }
       logger.debug('Document parsed')
 
-      return await storeData(args, docText)
+      chatAnswer = (await storeData(args, docText)) ?? ''
     } catch (err) {
       logger.error(err)
       throw err
     }
+    //empty the files folder
+    deleteDirectoryContents(OUTPUT_DIR)
+    return chatAnswer
   }
 
   const storeData = async (args: SaveArgs, response: string) => {

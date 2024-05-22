@@ -33,13 +33,20 @@ Pre-requisites:
 - run the commands
 - PostgreSQL with the pgvector extension available/installed
 - Ollama running locally with `mistral` model installed
+- run the following commands
+
+```
+    brew install --use-gsc graphicsmagick
+    brew install ghostscript
+    brew install libreoffice
+    mkdir files (to locally store the pdfs while using the app)
+```
 
 Copy and adapt the `.env.example` file to `.env.dev` and adapt it.
 Ensure your PostgreSQL database user is able to install the pgvector extension or pre-install it.
 
 ## Improvements/TODO
 
-- run the command `brew install --use-gsc graphicsmagick` and the command `brew install ghostscript`
 - Summarize documents and vectorize that
 - Use Hybrid search
 - Add support for labels to categorize documents
