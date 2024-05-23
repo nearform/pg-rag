@@ -1,7 +1,8 @@
 import dotenv from 'dotenv'
+import { DBParams } from '../../src/helpers/models'
 dotenv.config({ path: '.env.dev' })
 
-export const db = {
+export const db: DBParams = {
   host: process.env.DB_HOST || 'db',
   port: parseInt(process.env.DB_PORT || '5432', 10) || 5432,
   database: process.env.DB_NAME || 'pgrag',
