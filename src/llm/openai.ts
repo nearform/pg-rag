@@ -1,25 +1,22 @@
-import { fromBuffer } from 'pdf2pic'
-import { ToBase64Response } from 'pdf2pic/dist/types/convertResponse.js'
 import OpenAI from 'openai'
 import { extractText } from './promptManipulation.js'
 
-export async function getDocumentDetails(
+export const getOpenAIResult = async (
   model: OpenAI,
-  file: Buffer
-): Promise<OpenAI.Chat.Completions.ChatCompletion> {
-  const convert = await fromBuffer(file, {
-    format: 'png'
-  })
-  const imageUrls = await convert.bulk(-1, { responseType: 'base64' })
-  const chatCompletion = await model.chat.completions.create(
-    getOpenAIMessageBody(imageUrls)
-  )
-  console.log(JSON.stringify(chatCompletion.choices))
-  return chatCompletion
+  imageUrls: string[]
+): Promise<OpenAI.Chat.Completions.ChatCompletion | undefined> => {
+  try {
+    const chatCompletion = await model.chat.completions.create(
+      getOpenAIMessageBody(imageUrls)
+    )
+    return chatCompletion
+  } catch (err) {
+    console.log('Error communicating with OpenAI', err)
+  }
 }
 
-const getOpenAIMessageBody = (
-  imageUrls: ToBase64Response[]
+export const getOpenAIMessageBody = (
+  imageUrls: string[]
 ): OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming => {
   const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
     {
@@ -28,15 +25,13 @@ const getOpenAIMessageBody = (
     }
   ]
   imageUrls.map(img => {
-    if (img.base64) {
-      const image: OpenAI.Chat.Completions.ChatCompletionContentPart = {
-        type: 'image_url',
-        image_url: {
-          url: `data:image/jpeg;base64,${img.base64}`
-        }
+    const image: OpenAI.Chat.Completions.ChatCompletionContentPart = {
+      type: 'image_url',
+      image_url: {
+        url: img
       }
-      content.push(image)
     }
+    content.push(image)
   })
 
   return {

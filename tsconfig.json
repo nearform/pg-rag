@@ -9,6 +9,6 @@
     "noImplicitAny": true,
     "removeComments": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["**/*.test.ts"],
+  "include": ["src/**/*", "types/office-to-pdf.d.ts"],
+  "exclude": ["**/*.test.ts"]
 }

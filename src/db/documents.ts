@@ -28,28 +28,19 @@ export async function getDocument(
   doc: { id?: number; name?: string; metadata?: { fileId: string } }
 ): Promise<Document | undefined> {
   const client = await connPool.connect()
+  let query
   if (doc.id) {
-    const res = await client.query(
-      SQL`SELECT * FROM documents WHERE id = ${doc.id}`
-    )
-    await client.release()
-    return res.rows ? res.rows[0] : undefined
+    query = SQL`SELECT * FROM documents WHERE id = ${doc.id}`
   } else if (doc.name) {
-    const res = await client.query(
-      SQL`SELECT * FROM documents WHERE name = ${doc.name}`
-    )
-    await client.release()
-    return res.rows ? res.rows[0] : undefined
+    query = SQL`SELECT * FROM documents WHERE name = ${doc.name}`
   } else if (doc.metadata) {
-    const res = await client.query(
-      SQL`SELECT * FROM documents WHERE metadata->> 'fileId' = '${doc.metadata.fileId}';`
-    )
-    await client.release()
-    return res.rows ? res.rows[0] : undefined
+    query = SQL`SELECT * FROM documents WHERE metadata->> 'fileId' = '${doc.metadata.fileId}';`
   } else {
-    console.log('Unable to retrieve document')
     return undefined
   }
+  const res = await client.query(query)
+  await client.release()
+  return res.rows ? res.rows[0] : undefined
 }
 
 interface SearchByKeywordOptions {

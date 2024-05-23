@@ -8,10 +8,12 @@ import { insertVectorColumn } from './db/vector/index.js'
 import { fileTypeFromBuffer } from 'file-type'
 import { LLM } from 'langchain/llms/base'
 import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
-import { getDocumentDetails } from './llm/openai.js'
+import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
-import { RagResponse } from './helpers/models.js'
+import { RagResponse, SaveArgs } from './helpers/models.js'
+import { FILE_EXT, MAIN_EXT } from './helpers/constants.js'
+import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
 
 const logger = pino({ name: 'pg-rag' })
 
@@ -21,11 +23,6 @@ interface PgRagOptions {
   chatModel: LLM
   imageConversionModel: OpenAI
   resetDB?: boolean // Resets the DB on inititalization
-}
-
-interface SaveArgs {
-  data: Buffer
-  name: string
 }
 
 export async function init(options: PgRagOptions) {
@@ -40,21 +37,30 @@ export async function init(options: PgRagOptions) {
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
 
   const saveDocument = async (args: SaveArgs) => {
+    let chatAnswer = ''
     try {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
-
       let docText = ''
-      if (fileType && fileType.ext.toLowerCase() == 'pdf') {
-        const chatCompletion = await getDocumentDetails(
-          options.imageConversionModel,
-          args.data
-        )
-        for (const response of chatCompletion.choices) {
-          docText += response.message.content
+
+      if (fileType && FILE_EXT.indexOf(fileType.ext.toLowerCase())) {
+        //make a pdf file and read from it
+        let pdfArgs: SaveArgs = args
+        if (fileType.ext.toLowerCase() !== MAIN_EXT) {
+          pdfArgs = await convertToPdf(args)
         }
+
+        const imageUrls = await convertToImage(pdfArgs)
+        //call openAI to get results
+        const chatCompletion = await getOpenAIResult(
+          options.imageConversionModel,
+          imageUrls
+        )
         if (!chatCompletion || !chatCompletion.choices) {
           throw new Error(`File was not processed correctly ${args.name}`)
+        }
+        for (const response of chatCompletion.choices) {
+          docText += response.message.content
         }
       } else if (fileType) {
         throw new Error(
@@ -65,11 +71,12 @@ export async function init(options: PgRagOptions) {
       }
       logger.debug('Document parsed')
 
-      return await storeData(args, docText)
+      chatAnswer = (await storeData(args, docText)) ?? ''
     } catch (err) {
       logger.error(err)
       throw err
     }
+    return chatAnswer
   }
 
   const storeData = async (args: SaveArgs, response: string) => {
