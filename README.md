@@ -3,7 +3,10 @@
 # PG RAG
 
 A library to make building LLM based POCs fast and easy.
-This library provides RAG capability for .pdf files. It converts the files to images stores data in postgreSQL and manages the DB schema for you.
+This library provides RAG capability for multiple file types.
+If it is an office file it first converts it to pdf
+It will convert the pdf to images, then GPT-4o Query it to retrieve a text version of all the data.
+Then it stores the data in postgreSQL and manages the DB schema for you.
 The user can then rag query, search or summarize the data.
 
 ![Overview](./docs/overview.png)
@@ -39,7 +42,6 @@ Pre-requisites:
     brew install --use-gsc graphicsmagick
     brew install ghostscript
     brew install libreoffice
-    mkdir files
 ```
 
 Copy and adapt the `.env.example` file to `.env.dev` and adapt it.

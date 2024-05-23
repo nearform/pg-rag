@@ -1,6 +1,4 @@
 import pg from 'pg'
-import fs from 'node:fs'
-import path from 'node:path'
 import { Embeddings } from '@langchain/core/embeddings'
 import { migrate } from './db/migrations/migrate.js'
 import { pino } from 'pino'
@@ -14,9 +12,8 @@ import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
 import { RagResponse, SaveArgs } from './helpers/models.js'
-import { FILE_EXT, MAIN_EXT, OUTPUT_DIR } from './helpers/constants.js'
+import { FILE_EXT, MAIN_EXT } from './helpers/constants.js'
 import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
-import { deleteDirectoryContents } from './helpers/utils.js'
 
 const logger = pino({ name: 'pg-rag' })
 
@@ -45,18 +42,15 @@ export async function init(options: PgRagOptions) {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
       let docText = ''
+
       if (fileType && FILE_EXT.indexOf(fileType.ext.toLowerCase())) {
         //make a pdf file and read from it
-        const pdfArgs: SaveArgs = args
+        let pdfArgs: SaveArgs = args
         if (fileType.ext.toLowerCase() !== MAIN_EXT) {
-          pdfArgs.name = await convertToPdf(args)
-          pdfArgs.data = fs.readFileSync(path.join(OUTPUT_DIR, pdfArgs.name))
-          //make an image array
+          pdfArgs = await convertToPdf(args)
         }
-        const imageUrls = await convertToImage({
-          data: pdfArgs.data,
-          name: pdfArgs.name
-        })
+
+        const imageUrls = await convertToImage(pdfArgs)
         //call openAI to get results
         const chatCompletion = await getOpenAIResult(
           options.imageConversionModel,
@@ -82,8 +76,6 @@ export async function init(options: PgRagOptions) {
       logger.error(err)
       throw err
     }
-    //empty the files folder
-    deleteDirectoryContents(OUTPUT_DIR)
     return chatAnswer
   }
 

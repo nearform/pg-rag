@@ -21,7 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ollamaLlm = new Ollama(config.ollama)
 const embeddings = new OllamaEmbeddings(config.ollama)
 const imageConversionModel = new OpenAI(config.gpt4o)
-const fileName = 'example2.pptx'
+const fileName = 'document2.pptx'
 async function run() {
   const pool = new pg.Pool(config.db)
 
