@@ -12,3 +12,11 @@ export interface SaveArgs {
   data: Buffer
   name: string
 }
+
+export interface DBParams {
+  host: string
+  port: number
+  database: string
+  user: string
+  password: string | undefined
+}

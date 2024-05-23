@@ -15,13 +15,13 @@ import OpenAI from 'openai'
 import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama'
 import { Ollama } from '@langchain/community/llms/ollama'
 import * as PgRag from '../../src/index.js'
-import * as config from '../../src/dev_config.js'
+import * as config from './dev_config.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ollamaLlm = new Ollama(config.ollama)
 const embeddings = new OllamaEmbeddings(config.ollama)
 const imageConversionModel = new OpenAI(config.gpt4o)
-const fileName = 'document2.pptx'
+const fileName = 'files/example2.pptx'
 async function run() {
   const pool = new pg.Pool(config.db)
 
@@ -37,7 +37,7 @@ async function run() {
 
   await pgRag.waitForDocumentProcessed(jobId!)
   const res = await pgRag.rag({
-    prompt: 'Tell me about Sparse Vector Representation'
+    prompt: 'what is the healthy eating week?'
   })
   console.log('Search response: ', res)
   const summary = await pgRag.summary(fileName)

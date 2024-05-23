@@ -1,6 +1,6 @@
 import pg from 'pg'
 import * as db from '../db/documents.js'
-import { LLM } from 'langchain/llms/base'
+import { LLM } from '@langchain/core/language_models/llms'
 import { DocumentChunkResult } from '../db/documents.js'
 import { Embeddings } from '@langchain/core/embeddings'
 import { getVectorStore } from '../db/vector/index.js'
