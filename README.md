@@ -33,16 +33,18 @@ This library provides RAG capability for files (`.pdf`, `.ppt`/`.pptx`, `.doc`/`
 
 Pre-requisites:
 
-- run the commands
+- install the following applications:
+
+  - Ghostscript:
+    - Mac OS: https://gist.github.com/hiracchi/68f08efa936960f0f06cd8d277d0e845
+    - Linux and Windows: https://ghostscript.com/docs/9.54.0/Install.htm
+  - ImageMagick:
+    - https://imagemagick.org/script/download.php
+  - LibreOffice:
+    - https://www.libreoffice.org/download/download-libreoffice/
+
 - PostgreSQL with the pgvector extension available/installed
 - Ollama running locally with `mistral` model installed
-- run the following commands
-
-```
-    brew install --use-gsc graphicsmagick
-    brew install ghostscript
-    brew install libreoffice
-```
 
 Copy and adapt the `.env.example` file to `.env.dev` and adapt it.
 Ensure your PostgreSQL database user is able to install the pgvector extension or pre-install it.
