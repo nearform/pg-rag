@@ -1,5 +1,5 @@
 import pg from 'pg'
-import SQL from '@nearform/sql'
+import SQL, { SqlStatement } from '@nearform/sql'
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector'
 
 interface Document {
@@ -25,20 +25,28 @@ export async function saveDocument(
 
 export async function getDocument(
   connPool: pg.Pool,
-  doc: { id?: number; name?: string; metadata?: { fileId: string } }
+  doc: { id?: number; name?: string; metadata?: Record<string, string> }
 ): Promise<Document | undefined> {
   const client = await connPool.connect()
-  let query
+
+  const conditionArray: SqlStatement[] = []
   if (doc.id) {
-    query = SQL`SELECT * FROM documents WHERE id = ${doc.id}`
+    conditionArray.push(SQL`id = ${doc.id}`)
   } else if (doc.name) {
-    query = SQL`SELECT * FROM documents WHERE name = ${doc.name}`
-  } else if (doc.metadata) {
-    query = SQL`SELECT * FROM documents WHERE metadata->> 'fileId' = '${doc.metadata.fileId}';`
-  } else {
+    conditionArray.push(SQL`name = ${doc.name}`)
+  } else if (!doc.metadata) {
     return undefined
   }
-  const res = await client.query(query)
+  if (doc.metadata) {
+    for (const dataField in doc.metadata) {
+      conditionArray.push(
+        SQL`metadata ->> ${dataField} = ${doc.metadata[dataField]}`
+      )
+    }
+  }
+  const condition = SQL.glue(conditionArray, ' AND ')
+  const q = SQL.glue([SQL`SELECT * FROM documents`, condition], ' WHERE ')
+  const res = await client.query(q)
   await client.release()
   return res.rows ? res.rows[0] : undefined
 }
@@ -58,9 +66,14 @@ export interface DocumentChunkResult {
 export async function searchByVector(
   vectorStore: PGVectorStore,
   query: string,
-  k?: number
+  k?: number,
+  filters?: Record<string, string>
 ): Promise<DocumentChunkResult[]> {
-  const vectorResults = await vectorStore.similaritySearchWithScore(query, k)
+  const vectorResults = await vectorStore.similaritySearchWithScore(
+    query,
+    k,
+    filters
+  )
 
   return vectorResults.map(v => {
     return {
@@ -75,14 +88,29 @@ export async function searchByVector(
 export async function searchByKeyword(
   connPool: pg.Pool,
   keywords: string,
-  options: SearchByKeywordOptions = { limit: 5 }
+  options: SearchByKeywordOptions = { limit: 5 },
+  filter?: Record<string, string>
 ): Promise<DocumentChunkResult[]> {
   const client = await connPool.connect()
-  const res = await client.query(SQL`
-    SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
-    FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
-    WHERE to_tsvector('english', content) @@ query ORDER BY score DESC LIMIT ${options.limit};
-  `)
+  const metadataData: SqlStatement[] = []
+  if (filter) {
+    for (const f in filter) {
+      metadataData.push(SQL`AND metadata ->> ${f} = ${filter[f]}`)
+    }
+  }
+  const statement = SQL.glue(metadataData, ' ')
+  const query = SQL.glue(
+    [
+      SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
+  FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
+  WHERE to_tsvector('english', content)`,
+      statement,
+      SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
+    ],
+    ' '
+  )
+
+  const res = await client.query(query)
   await client.release()
   return res.rows.map(row => {
     return {

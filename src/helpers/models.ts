@@ -8,9 +8,22 @@ export interface RagResponse {
   sources: string[]
 }
 
-export interface SaveArgs {
+export interface FileArgs {
   data: Buffer
   name: string
+  filters: Record<string, string>
+}
+
+/**
+ * @param {string} prompt string input containing the query to be checked against the data
+ * @param {number | undefined} limit value of the number of Keywords to be returned on the keyword check
+ * @param {number | undefined} k  Number of most similar documents to return.
+ */
+export interface RagArgs {
+  prompt: string
+  limit?: number
+  k?: number
+  filters?: Record<string, string>
 }
 
 export interface DBParams {

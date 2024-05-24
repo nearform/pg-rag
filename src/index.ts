@@ -11,7 +11,7 @@ import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
 import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
-import { RagResponse, SaveArgs } from './helpers/models.js'
+import { RagResponse, FileArgs } from './helpers/models.js'
 import { FILE_EXT, MAIN_EXT } from './helpers/constants.js'
 import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
 
@@ -36,7 +36,7 @@ export async function init(options: PgRagOptions) {
 
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
 
-  const saveDocument = async (args: SaveArgs) => {
+  const saveDocument = async (args: FileArgs) => {
     let chatAnswer = ''
     try {
       logger.debug('Parsing document')
@@ -45,7 +45,7 @@ export async function init(options: PgRagOptions) {
 
       if (fileType && FILE_EXT.indexOf(fileType.ext.toLowerCase())) {
         //make a pdf file and read from it
-        let pdfArgs: SaveArgs = args
+        let pdfArgs: FileArgs = args
         if (fileType.ext.toLowerCase() !== MAIN_EXT) {
           pdfArgs = await convertToPdf(args)
         }
@@ -79,12 +79,12 @@ export async function init(options: PgRagOptions) {
     return chatAnswer
   }
 
-  const storeData = async (args: SaveArgs, response: string) => {
+  const storeData = async (args: FileArgs, response: string) => {
     const doc = await db.saveDocument(options.dbPool, {
       name: args.name,
       raw_content: args.data.toString('base64'),
       content: response,
-      metadata: { fileId: args.name }
+      metadata: { ...args.filters, fileId: args.name }
     })
     return await jobQueue.processDocument({ documentId: doc.id })
   }
@@ -105,8 +105,14 @@ export async function init(options: PgRagOptions) {
     })
   }
   /* eslint-disable  @typescript-eslint/no-explicit-any */
-  const summary = async (fileId: string): Promise<RagResponse | undefined> => {
-    const doc = await db.getDocument(options.dbPool, { name: fileId })
+  const summary = async (
+    fileId: string,
+    filters?: Record<string, string>
+  ): Promise<RagResponse | undefined> => {
+    const doc = await db.getDocument(options.dbPool, {
+      metadata: filters,
+      name: fileId
+    })
     if (!doc || !doc.content) {
       console.log('unable to retrieve document')
       return undefined
