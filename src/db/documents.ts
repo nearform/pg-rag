@@ -104,12 +104,12 @@ export async function searchByKeyword(
       SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE to_tsvector('english', content)`,
-      statement,
+      statement ?? SQL``,
       SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ],
     ' '
   )
-
+  console.log(query)
   const res = await client.query(query)
   await client.release()
   return res.rows.map(row => {
