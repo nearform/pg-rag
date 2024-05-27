@@ -1,5 +1,5 @@
 {
-  "name": "hub-template",
+  "name": "pg-rag",
   "version": "1.0.0",
   "description": "Template to start a new repository on the hub",
   "main": "src/index.ts",
