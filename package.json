@@ -1,7 +1,7 @@
 {
-  "name": "hub-template",
+  "name": "@nearform/pg-rag",
   "version": "1.0.0",
-  "description": "Template to start a new repository on the hub",
+  "description": "A library which provides RAG capability for multiple file types",
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nearform/hub-template.git"
+    "url": "git+https://github.com/nearform/pg-rag.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/nearform/hub-template/issues"
+    "url": "https://github.com/nearform/pg-rag/issues"
   },
-  "homepage": "https://github.com/nearform/hub-template#readme",
+  "homepage": "https://github.com/nearform/pg-rag#readme",
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
