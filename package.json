@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "test": "find ./src -type f -name '*.test.ts' | xargs node --import=tsx --test",
     "prepare": "husky",
-    "build": "tsc --build",
+    "copy-files": "cp -R ./src/llm/prompts ./dist/llm",
+    "build": "tsc --build && npm run copy-files",
     "clean": "tsc --build --clean"
   },
   "repository": {

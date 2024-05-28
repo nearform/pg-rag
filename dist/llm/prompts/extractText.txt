@@ -1,0 +1,1 @@
+Theses images represent pages of a PDF. Get me the full document in text value including the details for each graph, table  and content picture in the image. It should read similarly to the original document just on a text base.
