@@ -2,12 +2,14 @@
   "name": "@nearform/pg-rag",
   "version": "1.0.0",
   "description": "A library which provides RAG capability for multiple file types",
-  "main": "src/index.ts",
+  "main": "dist/index",
   "type": "module",
   "scripts": {
     "lint": "eslint .",
     "test": "find ./src -type f -name '*.test.ts' | xargs node --import=tsx --test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
   },
   "repository": {
     "type": "git",

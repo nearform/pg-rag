@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
     "module": "NodeNext",
-    "outDir": "build",
-
+    "outDir": "dist",
     "alwaysStrict": true,
     "allowUnreachableCode": false,
     "strictNullChecks": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "removeComments": true
   },
   "include": ["src/**/*", "types/office-to-pdf.d.ts"],

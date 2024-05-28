@@ -18,7 +18,7 @@ import * as PgRag from '../../src/index.js'
 import * as config from './dev_config.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const ollamaLlm = new Ollama(config.ollama)
+const chatModel = new Ollama(config.ollama)
 const embeddings = new OllamaEmbeddings(config.ollama)
 const imageConversionModel = new OpenAI(config.gpt4o)
 const fileName = 'files/example2.pptx'
@@ -30,7 +30,7 @@ async function run() {
     dbPool: pool,
     embeddings,
     imageConversionModel: imageConversionModel,
-    chatModel: ollamaLlm,
+    chatModel,
     resetDB: true
   })
   const jobId = await pgRag.saveDocument({ data: file, name: fileName })

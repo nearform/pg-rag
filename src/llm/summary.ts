@@ -2,7 +2,8 @@ import {
   loadSummarizationChain,
   SummarizationChainParams
 } from 'langchain/chains'
-import { LLM } from 'langchain/llms/base'
+import { LLM } from '@langchain/core/language_models/llms'
+import { PromptTemplate } from '@langchain/core/prompts'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 
 import { makePrompt } from './promptManipulation.js'
@@ -11,6 +12,8 @@ type SummarizationChainParamsExtended = SummarizationChainParams & {
   returnIntermediateSteps: boolean
   input_key: string
   output_key: string
+  questionPrompt: PromptTemplate
+  refinePrompt: PromptTemplate
 }
 
 export interface SummarizationConfig {
