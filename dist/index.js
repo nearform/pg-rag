@@ -76,13 +76,13 @@ export async function init(options) {
             model: options.chatModel
         });
     };
-    const summary = async (fileId) => {
+    const summary = async (fileId, config) => {
         const doc = await db.getDocument(options.dbPool, { name: fileId });
         if (!doc || !doc.content) {
             console.log('unable to retrieve document');
             return undefined;
         }
-        const summaryText = await summarizeText(doc.content, options.chatModel, undefined);
+        const summaryText = await summarizeText(doc.content, options.chatModel, config);
         const response = { content: summaryText['output_text'], sources: [fileId] };
         return response;
     };

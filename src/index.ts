@@ -10,7 +10,7 @@ import { LLM } from '@langchain/core/language_models/llms'
 import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
 import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
-import { summarizeText } from './llm/summary.js'
+import { SummarizationConfig, summarizeText } from './llm/summary.js'
 import { RagResponse, SaveArgs } from './helpers/models.js'
 import { FILE_EXT, MAIN_EXT } from './helpers/constants.js'
 import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
@@ -105,7 +105,10 @@ export async function init(options: PgRagOptions) {
     })
   }
   /* eslint-disable  @typescript-eslint/no-explicit-any */
-  const summary = async (fileId: string): Promise<RagResponse | undefined> => {
+  const summary = async (
+    fileId: string,
+    config: SummarizationConfig
+  ): Promise<RagResponse | undefined> => {
     const doc = await db.getDocument(options.dbPool, { name: fileId })
     if (!doc || !doc.content) {
       console.log('unable to retrieve document')
@@ -114,7 +117,7 @@ export async function init(options: PgRagOptions) {
     const summaryText = await summarizeText(
       doc.content,
       options.chatModel,
-      undefined
+      config
     )
     const response = { content: summaryText['output_text'], sources: [fileId] }
     return response
