@@ -28,7 +28,7 @@ export async function getDocument(connPool, doc) {
 }
 export async function getDocuments(connPool) {
     const client = await connPool.connect();
-    const query = SQL `SELECT * FROM documents`;
+    const query = SQL `SELECT id, filename, metadata FROM documents`;
     const res = await client.query(query);
     await client.release();
     return res.rows ?? [];
