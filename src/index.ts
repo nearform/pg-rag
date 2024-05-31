@@ -37,7 +37,6 @@ export async function init(options: PgRagOptions) {
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
 
   const saveDocument = async (args: FileArgs) => {
-    let chatAnswer = ''
     try {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
@@ -71,12 +70,11 @@ export async function init(options: PgRagOptions) {
       }
       logger.debug('Document parsed')
 
-      chatAnswer = (await storeData(args, docText)) ?? ''
+      return await storeData(args, docText)
     } catch (err) {
       logger.error(err)
       throw err
     }
-    return chatAnswer
   }
 
   const deleteDocument = async (documentId: number) => {
