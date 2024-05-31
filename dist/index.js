@@ -86,6 +86,9 @@ export async function init(options) {
         const response = { content: summaryText['output_text'], sources: [fileId] };
         return response;
     };
+    const list = async () => {
+        return await db.getDocuments(options.dbPool);
+    };
     const shutdown = async () => {
         await jobQueue.pgBoss.stop();
     };
@@ -93,6 +96,7 @@ export async function init(options) {
     return {
         saveDocument,
         retrieve,
+        list,
         rag,
         summary,
         waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,

@@ -26,6 +26,13 @@ export async function getDocument(connPool, doc) {
     await client.release();
     return res.rows ? res.rows[0] : undefined;
 }
+export async function getDocuments(connPool) {
+    const client = await connPool.connect();
+    const query = SQL `SELECT * FROM documents`;
+    const res = await client.query(query);
+    await client.release();
+    return res.rows ?? [];
+}
 export async function searchByVector(vectorStore, query, k) {
     const vectorResults = await vectorStore.similaritySearchWithScore(query, k);
     return vectorResults.map(v => {
