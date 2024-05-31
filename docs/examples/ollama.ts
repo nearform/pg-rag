@@ -26,6 +26,8 @@ async function run() {
   const pool = new pg.Pool(config.db)
 
   const file = await fs.readFile(path.join(__dirname, `./${fileName}`))
+
+  const filters: Record<string, string> = { userId: '1' }
   const pgRag = await PgRag.init({
     dbPool: pool,
     embeddings,
@@ -33,16 +35,22 @@ async function run() {
     chatModel,
     resetDB: true
   })
-  const jobId = await pgRag.saveDocument({ data: file, name: fileName })
+  const result = await pgRag.saveDocument({
+    data: file,
+    name: fileName,
+    metadata: filters
+  })
 
-  await pgRag.waitForDocumentProcessed(jobId!)
+  await pgRag.waitForDocumentProcessed(result.jobId!)
   const res = await pgRag.rag({
-    prompt: 'what is the healthy eating week?'
+    prompt: 'what is the healthy eating week?',
+    filters: filters
   })
   console.log('Search response: ', res)
-  const summary = await pgRag.summary(fileName)
+  const summary = await pgRag.summary(fileName, filters)
   console.log('Summary response: ', summary)
 
+  await pgRag.deleteDocument(result.id)
   await pgRag.shutdown()
 }
 

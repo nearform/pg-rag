@@ -6,18 +6,7 @@ import { Embeddings } from '@langchain/core/embeddings'
 import { getVectorStore } from '../db/vector/index.js'
 import { performance } from 'node:perf_hooks'
 import { makePrompt } from './promptManipulation.js'
-import { RagResponse } from '../helpers/models.js'
-
-/**
- * @param {string} prompt string input containing the query to be checked against the data
- * @param {number | undefined} limit value of the number of Keywords to be returned on the keyword check
- * @param {number | undefined} k  Number of most similar documents to return.
- */
-export interface RagArgs {
-  prompt: string
-  limit?: number
-  k?: number
-}
+import { RagArgs, RagResponse } from '../helpers/models.js'
 
 export interface MetadataObject {
   fileId: string
@@ -55,16 +44,22 @@ export async function hybridRetrieve(args: RagArgs, conf: SearchConf) {
   const vectorResults = await db.searchByVector(
     vectorStore,
     args.prompt,
-    args.k
+    args.k,
+    args.filters
   )
 
   const searchByKeywordPrompt = await keywordsPrompt.format({
     query: args.prompt
   })
   const keywords = await conf.model.invoke(searchByKeywordPrompt)
-  const keywordResults = await db.searchByKeyword(conf.dbPool, keywords, {
-    limit: limit
-  })
+  const keywordResults = await db.searchByKeyword(
+    conf.dbPool,
+    keywords,
+    {
+      limit: limit
+    },
+    args.filters
+  )
   let rerankedResults = reRank(
     vectorResults,
     keywordResults,
@@ -80,7 +75,6 @@ export async function rag(
   conf: SearchConf
 ): Promise<RagResponse> {
   performance.measure('RAG')
-
   const searchResults = await hybridRetrieve(args, conf)
 
   const sources = Array.from(

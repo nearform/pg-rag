@@ -1,13 +1,10 @@
 import toPDF from 'office-to-pdf'
 
 import { fromBuffer } from 'pdf2pic'
-import { SaveArgs } from '../helpers/models.js'
+import { FileArgs } from '../helpers/models.js'
 
-export async function convertToPdf(args: SaveArgs): Promise<SaveArgs> {
-  const pdfArgs = {
-    name: `${args.name.split('.')[0]}.pdf`,
-    data: new Buffer('')
-  }
+export async function convertToPdf(args: FileArgs): Promise<FileArgs> {
+  const pdfArgs = args
   try {
     const pdf = (await toPDF(args.data)) as Buffer
     pdfArgs.data = pdf
@@ -17,9 +14,9 @@ export async function convertToPdf(args: SaveArgs): Promise<SaveArgs> {
   return pdfArgs
 }
 
-export const convertToImage = async (args: SaveArgs): Promise<string[]> => {
+export const convertToImage = async (args: FileArgs): Promise<string[]> => {
   const convert = await fromBuffer(args.data, {
-    format: 'png'
+    format: 'jpeg'
   })
   const imageUrls = await convert.bulk(-1, { responseType: 'base64' })
   const images: string[] = []

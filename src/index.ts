@@ -7,11 +7,11 @@ import { init as initJobQueue } from './jobs/index.js'
 import { insertVectorColumn } from './db/vector/index.js'
 import { fileTypeFromBuffer } from 'file-type'
 import { LLM } from '@langchain/core/language_models/llms'
-import { RagArgs, hybridRetrieve, rag as doRag } from './llm/index.js'
+import { hybridRetrieve, rag as doRag } from './llm/index.js'
 import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
-import { SummarizationConfig, summarizeText } from './llm/summary.js'
-import { RagResponse, SaveArgs } from './helpers/models.js'
+import { summarizeText } from './llm/summary.js'
+import { RagResponse, FileArgs, RagArgs } from './helpers/models.js'
 import { FILE_EXT, MAIN_EXT } from './helpers/constants.js'
 import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
 
@@ -36,8 +36,7 @@ export async function init(options: PgRagOptions) {
 
   const jobQueue = await initJobQueue(options.dbPool, options.embeddings)
 
-  const saveDocument = async (args: SaveArgs) => {
-    let chatAnswer = ''
+  const saveDocument = async (args: FileArgs) => {
     try {
       logger.debug('Parsing document')
       const fileType = await fileTypeFromBuffer(args.data)
@@ -45,7 +44,7 @@ export async function init(options: PgRagOptions) {
 
       if (fileType && FILE_EXT.indexOf(fileType.ext.toLowerCase())) {
         //make a pdf file and read from it
-        let pdfArgs: SaveArgs = args
+        let pdfArgs: FileArgs = args
         if (fileType.ext.toLowerCase() !== MAIN_EXT) {
           pdfArgs = await convertToPdf(args)
         }
@@ -71,22 +70,36 @@ export async function init(options: PgRagOptions) {
       }
       logger.debug('Document parsed')
 
-      chatAnswer = (await storeData(args, docText)) ?? ''
+      return await storeData(args, docText)
     } catch (err) {
       logger.error(err)
       throw err
     }
-    return chatAnswer
   }
 
-  const storeData = async (args: SaveArgs, response: string) => {
+  const deleteDocument = async (documentId: number) => {
+    const isDeleteSuccessful = await db.deleteDocument(
+      options.dbPool,
+      documentId
+    )
+    if (isDeleteSuccessful) {
+      logger.info(`Document ${documentId} successfully deleted`)
+    } else {
+      logger.info(`Failed to delete document with id: ${documentId}`)
+    }
+  }
+
+  const storeData = async (args: FileArgs, response: string) => {
     const doc = await db.saveDocument(options.dbPool, {
       name: args.name,
       raw_content: args.data.toString('base64'),
       content: response,
-      metadata: { fileId: args.name }
+      metadata: { ...args.metadata, fileId: args.name }
     })
-    return await jobQueue.processDocument({ documentId: doc.id })
+    return {
+      id: doc.id,
+      jobId: await jobQueue.processDocument({ documentId: doc.id })
+    }
   }
 
   const retrieve = async (args: RagArgs) => {
@@ -107,9 +120,12 @@ export async function init(options: PgRagOptions) {
 
   const summary = async (
     fileId: string,
-    config: SummarizationConfig
+    filters?: Record<string, string>
   ): Promise<RagResponse | undefined> => {
-    const doc = await db.getDocument(options.dbPool, { name: fileId })
+    const doc = await db.getDocument(options.dbPool, {
+      metadata: filters,
+      name: fileId
+    })
     if (!doc || !doc.content) {
       console.log('unable to retrieve document')
       return undefined
@@ -117,7 +133,7 @@ export async function init(options: PgRagOptions) {
     const summaryText = await summarizeText(
       doc.content,
       options.chatModel,
-      config
+      undefined
     )
     const response = { content: summaryText['output_text'], sources: [fileId] }
     return response
@@ -134,6 +150,7 @@ export async function init(options: PgRagOptions) {
   logger.info('Initialized')
   return {
     saveDocument,
+    deleteDocument,
     retrieve,
     list,
     rag,
