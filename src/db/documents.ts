@@ -43,6 +43,14 @@ export async function getDocument(
   return res.rows ? res.rows[0] : undefined
 }
 
+export async function getDocuments(connPool: pg.Pool): Promise<Document[]> {
+  const client = await connPool.connect()
+  const query = SQL`SELECT * FROM documents`
+  const res = await client.query(query)
+  await client.release()
+  return res.rows ?? []
+}
+
 interface SearchByKeywordOptions {
   limit: number
 }

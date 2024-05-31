@@ -123,6 +123,10 @@ export async function init(options: PgRagOptions) {
     return response
   }
 
+  const list = async () => {
+    return await db.getDocuments(options.dbPool)
+  }
+
   const shutdown = async () => {
     await jobQueue.pgBoss.stop()
   }
@@ -131,6 +135,7 @@ export async function init(options: PgRagOptions) {
   return {
     saveDocument,
     retrieve,
+    list,
     rag,
     summary,
     waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
