@@ -122,7 +122,13 @@ Ensure your PostgreSQL database user is able to install the pgvector extension o
     })
 
     //Saves the document
-    const jobId = await pgRag.saveDocument({ data: file, name: fileName })
+    /**
+        result: {
+            jobId: string - the postgres jobId
+            id: string - the database id of the document that was uploaded
+        }
+    **/
+    const result = await pgRag.saveDocument({ data: file, name: fileName })
 
 
     await pgRag.waitForDocumentProcessed(jobId!)
