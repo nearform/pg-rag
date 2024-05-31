@@ -104,7 +104,7 @@ export async function init(options: PgRagOptions) {
       model: options.chatModel
     })
   }
-  /* eslint-disable  @typescript-eslint/no-explicit-any */
+
   const summary = async (
     fileId: string,
     config: SummarizationConfig
