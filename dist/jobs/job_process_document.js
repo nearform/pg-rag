@@ -33,7 +33,7 @@ export const createJobProcessor = (args) => {
             const splitDoc = await docSplitter.splitDocuments([
                 {
                     pageContent: doc?.content,
-                    metadata: { ...doc?.metadata, parentDocumentId: doc.id }
+                    metadata: { ...doc?.metadata, parentDocumentId: doc.id?.toString() }
                 }
             ]);
             logger.info('Vectorizing document');
@@ -44,6 +44,7 @@ export const createJobProcessor = (args) => {
                 documentId: job.data.documentId,
                 chunks: splitDoc.length
             });
+            return job.data.documentId;
         }
         catch (err) {
             logger.error({

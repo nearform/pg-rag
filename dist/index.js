@@ -19,7 +19,6 @@ export async function init(options) {
     await insertVectorColumn(options.dbPool, options.embeddings);
     const jobQueue = await initJobQueue(options.dbPool, options.embeddings);
     const saveDocument = async (args) => {
-        let chatAnswer = '';
         try {
             logger.debug('Parsing document');
             const fileType = await fileTypeFromBuffer(args.data);
@@ -45,22 +44,33 @@ export async function init(options) {
                 docText = args.data.toString('utf8');
             }
             logger.debug('Document parsed');
-            chatAnswer = (await storeData(args, docText)) ?? '';
+            return await storeData(args, docText);
         }
         catch (err) {
             logger.error(err);
             throw err;
         }
-        return chatAnswer;
+    };
+    const deleteDocument = async (documentId) => {
+        const isDeleteSuccessful = await db.deleteDocument(options.dbPool, documentId);
+        if (isDeleteSuccessful) {
+            logger.info(`Document ${documentId} successfully deleted`);
+        }
+        else {
+            logger.info(`Failed to delete document with id: ${documentId}`);
+        }
     };
     const storeData = async (args, response) => {
         const doc = await db.saveDocument(options.dbPool, {
             name: args.name,
             raw_content: args.data.toString('base64'),
             content: response,
-            metadata: { fileId: args.name }
+            metadata: { ...args.metadata, fileId: args.name }
         });
-        return await jobQueue.processDocument({ documentId: doc.id });
+        return {
+            id: doc.id,
+            jobId: await jobQueue.processDocument({ documentId: doc.id })
+        };
     };
     const retrieve = async (args) => {
         return hybridRetrieve(args, {
@@ -76,13 +86,16 @@ export async function init(options) {
             model: options.chatModel
         });
     };
-    const summary = async (fileId, config) => {
-        const doc = await db.getDocument(options.dbPool, { name: fileId });
+    const summary = async (fileId, filters) => {
+        const doc = await db.getDocument(options.dbPool, {
+            metadata: filters,
+            name: fileId
+        });
         if (!doc || !doc.content) {
             console.log('unable to retrieve document');
             return undefined;
         }
-        const summaryText = await summarizeText(doc.content, options.chatModel, config);
+        const summaryText = await summarizeText(doc.content, options.chatModel, undefined);
         const response = { content: summaryText['output_text'], sources: [fileId] };
         return response;
     };
@@ -95,6 +108,7 @@ export async function init(options) {
     logger.info('Initialized');
     return {
         saveDocument,
+        deleteDocument,
         retrieve,
         list,
         rag,

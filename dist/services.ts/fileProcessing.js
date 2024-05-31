@@ -1,10 +1,7 @@
 import toPDF from 'office-to-pdf';
 import { fromBuffer } from 'pdf2pic';
 export async function convertToPdf(args) {
-    const pdfArgs = {
-        name: `${args.name.split('.')[0]}.pdf`,
-        data: new Buffer('')
-    };
+    const pdfArgs = args;
     try {
         const pdf = (await toPDF(args.data));
         pdfArgs.data = pdf;
@@ -16,7 +13,7 @@ export async function convertToPdf(args) {
 }
 export const convertToImage = async (args) => {
     const convert = await fromBuffer(args.data, {
-        format: 'png'
+        format: 'jpeg'
     });
     const imageUrls = await convert.bulk(-1, { responseType: 'base64' });
     const images = [];

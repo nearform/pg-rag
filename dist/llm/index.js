@@ -18,14 +18,14 @@ export async function hybridRetrieve(args, conf) {
     const keywordsPrompt = makePrompt('./prompts/keywords.txt');
     const limit = args.limit || 10;
     const vectorStore = getVectorStore(conf.dbPool, conf.embeddings);
-    const vectorResults = await db.searchByVector(vectorStore, args.prompt, args.k);
+    const vectorResults = await db.searchByVector(vectorStore, args.prompt, args.k, args.filters);
     const searchByKeywordPrompt = await keywordsPrompt.format({
         query: args.prompt
     });
     const keywords = await conf.model.invoke(searchByKeywordPrompt);
     const keywordResults = await db.searchByKeyword(conf.dbPool, keywords, {
         limit: limit
-    });
+    }, args.filters);
     let rerankedResults = reRank(vectorResults, keywordResults, searchReRankBalance);
     rerankedResults = rerankedResults.slice(0, limit);
     return rerankedResults;
