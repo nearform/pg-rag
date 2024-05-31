@@ -52,7 +52,6 @@ export async function hybridRetrieve(args: RagArgs, conf: SearchConf) {
     query: args.prompt
   })
   const keywords = await conf.model.invoke(searchByKeywordPrompt)
-  console.log(args.filters)
   const keywordResults = await db.searchByKeyword(
     conf.dbPool,
     keywords,
@@ -76,7 +75,7 @@ export async function rag(
   conf: SearchConf
 ): Promise<RagResponse> {
   performance.measure('RAG')
-
+  console.log('rag', args)
   const searchResults = await hybridRetrieve(args, conf)
 
   const sources = Array.from(

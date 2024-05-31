@@ -51,6 +51,28 @@ export async function getDocument(
   return res.rows ? res.rows[0] : undefined
 }
 
+export async function deleteDocument(
+  connPool: pg.Pool,
+  id: number
+): Promise<boolean | undefined> {
+  const client = await connPool.connect()
+  try {
+    if (id > 0) {
+      await client.query(
+        SQL`DELETE FROM document_chunks WHERE metadata ->> 'parentDocumentId' =  ${id}`
+      )
+      await client.query(SQL`DELETE FROM documents WHERE id = ${id}`)
+      await client.release()
+    } else {
+      throw new Error('Provided invalid Id for deletion')
+    }
+    return true
+  } catch (error) {
+    console.log(`Failed to delete document with id: ${id} `, error)
+    return false
+  }
+}
+
 interface SearchByKeywordOptions {
   limit: number
 }
@@ -95,7 +117,7 @@ export async function searchByKeyword(
   const metadataData: SqlStatement[] = []
   if (filter) {
     for (const f in filter) {
-      metadataData.push(SQL`AND metadata ->> ${f} = ${filter[f]}`)
+      metadataData.push(SQL` metadata ->> ${f} = ${filter[f]} AND`)
     }
   }
   const statement = SQL.glue(metadataData, ' ')
@@ -103,8 +125,9 @@ export async function searchByKeyword(
     [
       SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
-  WHERE to_tsvector('english', content)`,
+  WHERE`,
       statement ?? SQL``,
+      SQL`to_tsvector('english', content)`,
       SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ],
     ' '
