@@ -75,7 +75,6 @@ export async function rag(
   conf: SearchConf
 ): Promise<RagResponse> {
   performance.measure('RAG')
-  console.log('rag', args)
   const searchResults = await hybridRetrieve(args, conf)
 
   const sources = Array.from(

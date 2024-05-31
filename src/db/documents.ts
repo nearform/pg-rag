@@ -59,7 +59,7 @@ export async function deleteDocument(
   try {
     if (id > 0) {
       await client.query(
-        SQL`DELETE FROM document_chunks WHERE metadata ->> 'parentDocumentId' =  ${id}`
+        SQL`DELETE FROM document_chunks WHERE metadata ->>  'parentDocumentId' = ${id.toString()}`
       )
       await client.query(SQL`DELETE FROM documents WHERE id = ${id}`)
       await client.release()
@@ -132,7 +132,7 @@ export async function searchByKeyword(
     ],
     ' '
   )
-  console.log(query)
+
   const res = await client.query(query)
   await client.release()
   return res.rows.map(row => {

@@ -96,9 +96,12 @@ export async function init(options: PgRagOptions) {
       name: args.name,
       raw_content: args.data.toString('base64'),
       content: response,
-      metadata: { ...args.filters, fileId: args.name }
+      metadata: { ...args.metadata, fileId: args.name }
     })
-    return await jobQueue.processDocument({ documentId: doc.id })
+    return {
+      id: doc.id,
+      jobId: await jobQueue.processDocument({ documentId: doc.id })
+    }
   }
 
   const retrieve = async (args: RagArgs) => {
