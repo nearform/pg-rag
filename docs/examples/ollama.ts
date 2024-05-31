@@ -21,6 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ollamaLlm = new Ollama(config.ollama)
 const embeddings = new OllamaEmbeddings(config.ollama)
 const imageConversionModel = new OpenAI(config.gpt4o)
+const id = 1
 const fileName = 'files/example2.pptx'
 async function run() {
   const pool = new pg.Pool(config.db)
@@ -36,13 +37,14 @@ async function run() {
   const jobId = await pgRag.saveDocument({ data: file, name: fileName })
 
   await pgRag.waitForDocumentProcessed(jobId!)
-  const res = await pgRag.rag({
-    prompt: 'what is the healthy eating week?'
-  })
-  console.log('Search response: ', res)
-  const summary = await pgRag.summary(fileName)
-  console.log('Summary response: ', summary)
+  // const res = await pgRag.rag({
+  //   prompt: 'what is the healthy eating week?'
+  // })
+  // console.log('Search response: ', res)
+  // const summary = await pgRag.summary(fileName)
+  // console.log('Summary response: ', summary)
 
+  await pgRag.deleteDocument(id)
   await pgRag.shutdown()
 }
 

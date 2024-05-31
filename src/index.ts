@@ -79,6 +79,18 @@ export async function init(options: PgRagOptions) {
     return chatAnswer
   }
 
+  const deleteDocument = async (documentId: number) => {
+    const isDeleteSuccessful = await db.deleteDocument(
+      options.dbPool,
+      documentId
+    )
+    if (isDeleteSuccessful) {
+      logger.info(`Document ${documentId} successfully deleted`)
+    } else {
+      logger.info(`Failed to delete document with id: ${documentId}`)
+    }
+  }
+
   const storeData = async (args: SaveArgs, response: string) => {
     const doc = await db.saveDocument(options.dbPool, {
       name: args.name,
@@ -127,6 +139,7 @@ export async function init(options: PgRagOptions) {
   logger.info('Initialized')
   return {
     saveDocument,
+    deleteDocument,
     retrieve,
     rag,
     summary,

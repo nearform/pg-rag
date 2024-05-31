@@ -43,6 +43,28 @@ export async function getDocument(
   return res.rows ? res.rows[0] : undefined
 }
 
+export async function deleteDocument(
+  connPool: pg.Pool,
+  id: number
+): Promise<boolean | undefined> {
+  const client = await connPool.connect()
+  try {
+    if (id > 0) {
+      await client.query(
+        SQL`DELETE FROM document_chunks WHERE metadata ->> 'parentDocumentId' =  ${id}`
+      )
+      await client.query(SQL`DELETE FROM documents WHERE id = ${id}`)
+      await client.release()
+    } else {
+      throw new Error('Provided invalid Id for deletion')
+    }
+    return true
+  } catch (error) {
+    console.log(`Failed to delete document with id: ${id} `, error)
+    return false
+  }
+}
+
 interface SearchByKeywordOptions {
   limit: number
 }
