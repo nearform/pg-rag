@@ -120,7 +120,7 @@ export async function init(options: PgRagOptions) {
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   const summary = async (
     fileId: string,
-    filters?: Record<string, string>
+    filters?: Record<string, string | string[]>
   ): Promise<RagResponse | undefined> => {
     const doc = await db.getDocument(options.dbPool, {
       metadata: filters,

@@ -1,6 +1,7 @@
 import pg from 'pg'
 import SQL, { SqlStatement } from '@nearform/sql'
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector'
+import { Metadata } from '@langchain/community/vectorstores/singlestore'
 
 interface Document {
   id?: number
@@ -25,11 +26,16 @@ export async function saveDocument(
 
 export async function getDocument(
   connPool: pg.Pool,
-  doc: { id?: number; name?: string; metadata?: Record<string, string> }
+  doc: {
+    id?: number
+    name?: string
+    metadata?: Record<string, string | string[]>
+  }
 ): Promise<Document | undefined> {
   const client = await connPool.connect()
 
   const conditionArray: SqlStatement[] = []
+
   if (doc.id) {
     conditionArray.push(SQL`id = ${doc.id}`)
   } else if (doc.name) {
@@ -39,9 +45,15 @@ export async function getDocument(
   }
   if (doc.metadata) {
     for (const dataField in doc.metadata) {
-      conditionArray.push(
-        SQL`metadata ->> ${dataField} = ${doc.metadata[dataField]}`
-      )
+      if (typeof dataField == 'string') {
+        conditionArray.push(
+          SQL`metadata ->> ${dataField} = ${doc.metadata[dataField]}`
+        )
+      } else if (dataField == 'filenames') {
+        conditionArray.push(
+          SQL`metadata ->> 'fileId' IN (${doc.metadata[dataField]})`
+        )
+      }
     }
   }
   const condition = SQL.glue(conditionArray, ' AND ')
@@ -85,16 +97,33 @@ export interface DocumentChunkResult {
   type: 'vector' | 'keyword'
 }
 
+function transformFilters(
+  filters: Record<string, string | string[]> | undefined
+): Metadata | undefined {
+  if (!filters) {
+    return undefined
+  }
+  let metadata: Metadata = {}
+  for (const key in filters) {
+    if (key == 'filenames') {
+      metadata = { ...metadata, fileId: { $in: filters[key] } }
+    }
+    metadata = { ...metadata, key: filters[key] }
+  }
+}
+
 export async function searchByVector(
   vectorStore: PGVectorStore,
   query: string,
   k?: number,
-  filters?: Record<string, string>
+  filters?: Record<string, string | string[]>
 ): Promise<DocumentChunkResult[]> {
+  const filterOptions = transformFilters(filters)
+
   const vectorResults = await vectorStore.similaritySearchWithScore(
     query,
     k,
-    filters
+    filterOptions
   )
 
   return vectorResults.map(v => {
@@ -111,16 +140,22 @@ export async function searchByKeyword(
   connPool: pg.Pool,
   keywords: string,
   options: SearchByKeywordOptions = { limit: 5 },
-  filter?: Record<string, string>
+  filter?: Record<string, string | string[]>
 ): Promise<DocumentChunkResult[]> {
   const client = await connPool.connect()
   const metadataData: SqlStatement[] = []
+
   if (filter) {
     for (const f in filter) {
-      metadataData.push(SQL` metadata ->> ${f} = ${filter[f]} AND`)
+      if (typeof filter[f] == 'string') {
+        metadataData.push(SQL` metadata ->> ${f} = ${filter[f]} AND`)
+      } else if (f == 'filenames') {
+        metadataData.push(SQL` metadata ->> 'fileId' IN (${filter[f]}) AND`)
+      }
     }
   }
   const statement = SQL.glue(metadataData, ' ')
+
   const query = SQL.glue(
     [
       SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
