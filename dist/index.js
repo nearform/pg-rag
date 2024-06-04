@@ -79,6 +79,9 @@ export async function init(options) {
             model: options.chatModel
         });
     };
+    const getDocuments = async (args) => {
+        return db.getDocument(options.dbPool, args);
+    };
     const rag = async (args) => {
         return doRag(args, {
             dbPool: options.dbPool,
@@ -113,6 +116,7 @@ export async function init(options) {
         list,
         rag,
         summary,
+        getDocuments,
         waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
         pgBoss: jobQueue.pgBoss,
         shutdown

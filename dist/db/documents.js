@@ -21,7 +21,12 @@ export async function getDocument(connPool, doc) {
     }
     if (doc.metadata) {
         for (const dataField in doc.metadata) {
-            conditionArray.push(SQL `metadata ->> ${dataField} = ${doc.metadata[dataField]}`);
+            if (dataField == 'filenames') {
+                conditionArray.push(SQL `metadata ->> 'fileId' IN (${SQL.map(doc.metadata[dataField], name => SQL.unsafe(`'${name}'`))})`);
+            }
+            else if (typeof dataField == 'string') {
+                conditionArray.push(SQL `metadata ->> ${dataField} = ${doc.metadata[dataField]}`);
+            }
         }
     }
     const condition = SQL.glue(conditionArray, ' AND ');
@@ -55,8 +60,21 @@ export async function deleteDocument(connPool, id) {
         return false;
     }
 }
+function transformFilters(filters) {
+    if (!filters) {
+        return undefined;
+    }
+    let metadata = {};
+    for (const key in filters) {
+        if (key == 'filenames') {
+            metadata = { ...metadata, fileId: { $in: filters[key] } };
+        }
+        metadata = { ...metadata, key: filters[key] };
+    }
+}
 export async function searchByVector(vectorStore, query, k, filters) {
-    const vectorResults = await vectorStore.similaritySearchWithScore(query, k, filters);
+    const filterOptions = transformFilters(filters);
+    const vectorResults = await vectorStore.similaritySearchWithScore(query, k, filterOptions);
     return vectorResults.map(v => {
         return {
             content: v[0].pageContent,
@@ -71,7 +89,12 @@ export async function searchByKeyword(connPool, keywords, options = { limit: 5 }
     const metadataData = [];
     if (filter) {
         for (const f in filter) {
-            metadataData.push(SQL ` metadata ->> ${f} = ${filter[f]} AND`);
+            if (typeof filter[f] == 'string') {
+                metadataData.push(SQL ` metadata ->> ${f} = ${filter[f]} AND`);
+            }
+            else if (f == 'filenames') {
+                metadataData.push(SQL `metadata ->> 'fileId' IN (${SQL.map(filter[f], name => SQL.unsafe(`'${name}'`))})`);
+            }
         }
     }
     const statement = SQL.glue(metadataData, ' ');
