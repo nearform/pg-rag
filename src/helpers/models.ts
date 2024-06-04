@@ -34,3 +34,9 @@ export interface DBParams {
   user: string
   password: string | undefined
 }
+
+export interface DocArgs {
+  id?: number
+  name?: string
+  metadata?: Record<string, string | string[]>
+}

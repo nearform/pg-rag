@@ -56,16 +56,25 @@ async function run() {
 
   await pgRag.waitForDocumentProcessed(result2.jobId!)
 
-  const res = await pgRag.rag({
-    prompt: 'what is the healthy eating week?',
-    filters: filters
-  })
-  console.log('Search response: ', res)
-  // const summary = await pgRag.summary(fileName, filters)
-  // console.log('Summary response: ', summary)
+  console.log('filters', filters)
+  const listByMetadata = await pgRag.list({ metadata: filters })
 
-  await pgRag.deleteDocument(result.id)
-  await pgRag.shutdown()
+  console.log('List Files by metadata: ', listByMetadata)
+
+  const listById = await pgRag.list({ id: result2.id })
+
+  console.log('List Files by id: ', listById)
+
+  // const res = await pgRag.rag({
+  //   prompt: 'what is the healthy eating week?',
+  //   filters: filters
+  // })
+  // console.log('Search response: ', res)
+  // // const summary = await pgRag.summary(fileName, filters)
+  // // console.log('Summary response: ', summary)
+
+  // await pgRag.deleteDocument(result.id)
+  // await pgRag.shutdown()
 }
 
 run()

@@ -11,7 +11,7 @@ import { hybridRetrieve, rag as doRag } from './llm/index.js'
 import { getOpenAIResult } from './llm/openai.js'
 import OpenAI from 'openai'
 import { summarizeText } from './llm/summary.js'
-import { RagResponse, FileArgs, RagArgs } from './helpers/models.js'
+import { RagResponse, FileArgs, RagArgs, DocArgs } from './helpers/models.js'
 import { FILE_EXT, MAIN_EXT } from './helpers/constants.js'
 import { convertToPdf, convertToImage } from './services.ts/fileProcessing.js'
 
@@ -110,6 +110,10 @@ export async function init(options: PgRagOptions) {
     })
   }
 
+  const getDocuments = async (args: DocArgs) => {
+    return db.getDocument(options.dbPool, args)
+  }
+
   const rag = async (args: RagArgs) => {
     return doRag(args, {
       dbPool: options.dbPool,
@@ -150,6 +154,7 @@ export async function init(options: PgRagOptions) {
     retrieve,
     rag,
     summary,
+    getDocuments,
     waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
     pgBoss: jobQueue.pgBoss,
     shutdown

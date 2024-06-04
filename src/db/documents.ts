@@ -2,6 +2,7 @@ import pg from 'pg'
 import SQL, { SqlStatement } from '@nearform/sql'
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector'
 import { Metadata } from '@langchain/community/vectorstores/singlestore'
+import { DocArgs } from '../helpers/models.js'
 
 interface Document {
   id?: number
@@ -26,11 +27,7 @@ export async function saveDocument(
 
 export async function getDocument(
   connPool: pg.Pool,
-  doc: {
-    id?: number
-    name?: string
-    metadata?: Record<string, string | string[]>
-  }
+  doc: DocArgs
 ): Promise<Document | undefined> {
   const client = await connPool.connect()
 
@@ -45,13 +42,13 @@ export async function getDocument(
   }
   if (doc.metadata) {
     for (const dataField in doc.metadata) {
-      if (typeof dataField == 'string') {
+      if (dataField == 'filenames') {
+        conditionArray.push(
+          SQL`metadata ->> 'fileId' IN (${SQL.map(doc.metadata[dataField] as string[], name => SQL.unsafe(`'${name}'`))})`
+        )
+      } else if (typeof dataField == 'string') {
         conditionArray.push(
           SQL`metadata ->> ${dataField} = ${doc.metadata[dataField]}`
-        )
-      } else if (dataField == 'filenames') {
-        conditionArray.push(
-          SQL`metadata ->> 'fileId' IN (${doc.metadata[dataField]})`
         )
       }
     }
@@ -150,7 +147,9 @@ export async function searchByKeyword(
       if (typeof filter[f] == 'string') {
         metadataData.push(SQL` metadata ->> ${f} = ${filter[f]} AND`)
       } else if (f == 'filenames') {
-        metadataData.push(SQL` metadata ->> 'fileId' IN (${filter[f]}) AND`)
+        metadataData.push(
+          SQL`metadata ->> 'fileId' IN (${SQL.map(filter[f] as string[], name => SQL.unsafe(`'${name}'`))})`
+        )
       }
     }
   }
