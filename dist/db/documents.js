@@ -83,6 +83,7 @@ function transformFilters(filters) {
         }
         metadata = { ...metadata, key: filters[key] };
     }
+    return metadata;
 }
 export async function searchByVector(vectorStore, query, k, filters) {
     const filterOptions = transformFilters(filters);

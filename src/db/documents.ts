@@ -138,6 +138,8 @@ function transformFilters(
     }
     metadata = { ...metadata, key: filters[key] }
   }
+
+  return metadata
 }
 
 export async function searchByVector(
