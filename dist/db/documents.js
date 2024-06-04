@@ -35,10 +35,22 @@ export async function getDocument(connPool, doc) {
     await client.release();
     return res.rows ? res.rows[0] : undefined;
 }
-export async function getDocuments(connPool) {
+export async function getDocuments(connPool, filters) {
     const client = await connPool.connect();
-    const query = SQL `SELECT id, name, metadata FROM documents`;
-    const res = await client.query(query);
+    const conditionArray = [];
+    if (filters != null) {
+        for (const dataField in filters) {
+            if (dataField == 'filenames') {
+                conditionArray.push(SQL `metadata ->> 'fileId' IN (${SQL.map(filters[dataField], name => SQL.unsafe(`'${name}'`))})`);
+            }
+            else if (typeof dataField == 'string') {
+                conditionArray.push(SQL `metadata ->> ${dataField} = ${filters[dataField]}`);
+            }
+        }
+    }
+    const condition = SQL.glue(conditionArray, ' AND ');
+    const q = SQL.glue([SQL `SELECT id, name, metadata FROM documents`, condition], ' WHERE ');
+    const res = await client.query(q);
     await client.release();
     return res.rows ?? [];
 }

@@ -60,10 +60,33 @@ export async function getDocument(
   return res.rows ? res.rows[0] : undefined
 }
 
-export async function getDocuments(connPool: pg.Pool): Promise<Document[]> {
+export async function getDocuments(
+  connPool: pg.Pool,
+  filters?: Record<string, string | string[]>
+): Promise<Document[]> {
   const client = await connPool.connect()
-  const query = SQL`SELECT id, name, metadata FROM documents`
-  const res = await client.query(query)
+
+  const conditionArray: SqlStatement[] = []
+
+  if (filters != null) {
+    for (const dataField in filters) {
+      if (dataField == 'filenames') {
+        conditionArray.push(
+          SQL`metadata ->> 'fileId' IN (${SQL.map(filters[dataField] as string[], name => SQL.unsafe(`'${name}'`))})`
+        )
+      } else if (typeof dataField == 'string') {
+        conditionArray.push(
+          SQL`metadata ->> ${dataField} = ${filters[dataField]}`
+        )
+      }
+    }
+  }
+  const condition = SQL.glue(conditionArray, ' AND ')
+  const q = SQL.glue(
+    [SQL`SELECT id, name, metadata FROM documents`, condition],
+    ' WHERE '
+  )
+  const res = await client.query(q)
   await client.release()
   return res.rows ?? []
 }
