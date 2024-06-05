@@ -79,6 +79,9 @@ export async function init(options) {
             model: options.chatModel
         });
     };
+    const getDocuments = async (filters) => {
+        return await db.getDocuments(options.dbPool, filters);
+    };
     const rag = async (args) => {
         return doRag(args, {
             dbPool: options.dbPool,
@@ -99,9 +102,6 @@ export async function init(options) {
         const response = { content: summaryText['output_text'], sources: [fileId] };
         return response;
     };
-    const list = async () => {
-        return await db.getDocuments(options.dbPool);
-    };
     const shutdown = async () => {
         await jobQueue.pgBoss.stop();
     };
@@ -110,9 +110,9 @@ export async function init(options) {
         saveDocument,
         deleteDocument,
         retrieve,
-        list,
         rag,
         summary,
+        getDocuments,
         waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
         pgBoss: jobQueue.pgBoss,
         shutdown

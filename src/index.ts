@@ -110,8 +110,8 @@ export async function init(options: PgRagOptions) {
     })
   }
 
-  const getDocuments = async (args: DocArgs) => {
-    return db.getDocument(options.dbPool, args)
+  const getDocuments = async (filters?: Record<string, string | string[]>) => {
+    return await db.getDocuments(options.dbPool, filters)
   }
 
   const rag = async (args: RagArgs) => {
@@ -143,10 +143,6 @@ export async function init(options: PgRagOptions) {
     return response
   }
 
-  const list = async () => {
-    return await db.getDocuments(options.dbPool)
-  }
-
   const shutdown = async () => {
     await jobQueue.pgBoss.stop()
   }
@@ -156,7 +152,6 @@ export async function init(options: PgRagOptions) {
     saveDocument,
     deleteDocument,
     retrieve,
-    list,
     rag,
     summary,
     getDocuments,

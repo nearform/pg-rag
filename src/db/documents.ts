@@ -60,10 +60,33 @@ export async function getDocument(
   return res.rows ? res.rows[0] : undefined
 }
 
-export async function getDocuments(connPool: pg.Pool): Promise<Document[]> {
+export async function getDocuments(
+  connPool: pg.Pool,
+  filters?: Record<string, string | string[]>
+): Promise<Document[]> {
   const client = await connPool.connect()
-  const query = SQL`SELECT id, name, metadata FROM documents`
-  const res = await client.query(query)
+
+  const conditionArray: SqlStatement[] = []
+
+  if (filters != null) {
+    for (const dataField in filters) {
+      if (dataField == 'filenames') {
+        conditionArray.push(
+          SQL`metadata ->> 'fileId' IN (${SQL.map(filters[dataField] as string[], name => SQL.unsafe(`'${name}'`))})`
+        )
+      } else if (typeof dataField == 'string') {
+        conditionArray.push(
+          SQL`metadata ->> ${dataField} = ${filters[dataField]}`
+        )
+      }
+    }
+  }
+  const condition = SQL.glue(conditionArray, ' AND ')
+  const q = SQL.glue(
+    [SQL`SELECT id, name, metadata FROM documents`, condition],
+    ' WHERE '
+  )
+  const res = await client.query(q)
   await client.release()
   return res.rows ?? []
 }
@@ -115,6 +138,8 @@ function transformFilters(
     }
     metadata = { ...metadata, key: filters[key] }
   }
+
+  return metadata
 }
 
 export async function searchByVector(
@@ -168,8 +193,10 @@ export async function searchByKeyword(
       SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE`,
-      statement ?? SQL``,
-      SQL`to_tsvector('english', content)`,
+      SQL.glue(
+        [statement ?? SQL``, SQL`to_tsvector('english', content)`],
+        ' AND '
+      ),
       SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ],
     ' '
