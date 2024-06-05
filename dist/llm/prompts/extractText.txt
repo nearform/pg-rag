@@ -1,1 +1,1 @@
-These images are pages from a PDF document. Extract and convert the entire content into text, ensuring all details from graphs, tables, and pictures are included. The text should closely resemble the original document's structure and content.
+These images are pages from a PDF document. Extract and convert the entire content into text, ensuring graphs, tables, and pictures are represented as detailed text. The text should closely resemble the original document's structure and content.
