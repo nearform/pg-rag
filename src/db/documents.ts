@@ -195,7 +195,7 @@ export async function searchByKeyword(
   WHERE`,
       SQL.glue(
         [statement ?? SQL``, SQL`to_tsvector('english', content)`],
-        'AND'
+        ' AND '
       ),
       SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ],
