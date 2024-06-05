@@ -57,11 +57,11 @@ async function run() {
   await pgRag.waitForDocumentProcessed(result2.jobId!)
 
   console.log('filters', filters)
-  const listByMetadata = await pgRag.list({ metadata: filters })
+  const listByMetadata = await pgRag.getDocuments(filters)
 
   console.log('List Files by metadata: ', listByMetadata)
 
-  const listById = await pgRag.list({ id: result2.id })
+  const listById = await pgRag.getDocument({ id: result2.id })
 
   console.log('List Files by id: ', listById)
 

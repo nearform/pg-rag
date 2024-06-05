@@ -114,6 +114,10 @@ export async function init(options: PgRagOptions) {
     return await db.getDocuments(options.dbPool, filters)
   }
 
+  const getDocument = async (doc: DocArgs) => {
+    return await db.getDocument(options.dbPool, doc)
+  }
+
   const rag = async (args: RagArgs) => {
     return doRag(args, {
       dbPool: options.dbPool,
@@ -154,6 +158,7 @@ export async function init(options: PgRagOptions) {
     retrieve,
     rag,
     summary,
+    getDocument,
     getDocuments,
     waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
     pgBoss: jobQueue.pgBoss,
