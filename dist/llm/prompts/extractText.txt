@@ -1,1 +1,1 @@
-Theses images represent pages of a PDF. Get me the full document in text value including the details for each graph, table  and content picture in the image. It should read similarly to the original document just on a text base.
+These images are pages from a PDF document. Extract and convert the entire content into text, ensuring all details from graphs, tables, and pictures are included. The text should closely resemble the original document's structure and content.
