@@ -1,1 +1,1 @@
-Extract keywords from the following LLM query. Only answer with the keywords each separated by a comma: {query}
+Extract keywords from the following LLM query. Only answer with the keywords each separated by a comma. You should ignore `main topic`, `subject` and `previous history`: {query}
