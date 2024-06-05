@@ -110,12 +110,14 @@ export async function searchByKeyword(connPool, keywords, options = { limit: 5 }
             }
         }
     }
-    const statement = SQL.glue(metadataData, ' ');
+    const statement = metadataData.length
+        ? SQL.glue([...metadataData, SQL ` AND `], ' ')
+        : undefined;
     const query = SQL.glue([
         SQL `SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE`,
-        SQL.glue([statement ?? SQL ``, SQL `to_tsvector('english', content)`], ' AND '),
+        SQL.glue([statement ?? SQL ``, SQL `to_tsvector('english', content)`], ' '),
         SQL `@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ], ' ');
     const res = await client.query(query);
