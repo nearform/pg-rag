@@ -186,7 +186,7 @@ export async function searchByKeyword(
       }
     }
   }
-  const statement = SQL.glue(metadataData, ' ')
+  const statement = SQL.glue(metadataData, 'AND')
 
   const query = SQL.glue(
     [
