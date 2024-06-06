@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   loadSummarizationChain,
   SummarizationChainParams
@@ -45,7 +44,7 @@ export async function summarizeText(
     chunkSize: DEFAULT_CHUNK_SIZE,
     chunkOverlap: DEFAULT_CHUNK_OVERLAP,
     chainParams: {
-      type: 'refine',
+      type: 'refine' as const,
       questionPrompt,
       refinePrompt,
       returnIntermediateSteps: true,
@@ -61,6 +60,9 @@ export async function summarizeText(
   })
   const docs = await textSplitter.createDocuments([text])
 
-  const chain = loadSummarizationChain(chatModel, chainParams)
+  const chain = loadSummarizationChain(
+    chatModel,
+    chainParams as SummarizationChainParams
+  )
   return await chain.invoke({ input_documents: docs })
 }

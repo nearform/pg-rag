@@ -68,7 +68,7 @@ export async function getDocuments(
 
   const conditionArray: SqlStatement[] = []
 
-  if (filters != null) {
+  if (filters) {
     for (const dataField in filters) {
       if (dataField == 'filenames') {
         conditionArray.push(
@@ -88,7 +88,7 @@ export async function getDocuments(
   )
   const res = await client.query(q)
   await client.release()
-  return res.rows ?? []
+  return res.rows ? res.rows : []
 }
 
 export async function deleteDocument(
@@ -195,7 +195,10 @@ export async function searchByKeyword(
       SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE`,
-      SQL.glue([statement ?? SQL``, SQL`to_tsvector('english', content)`], ' '),
+      SQL.glue(
+        [statement ? statement : SQL``, SQL`to_tsvector('english', content)`],
+        ' '
+      ),
       SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ],
     ' '

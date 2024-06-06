@@ -38,7 +38,7 @@ export async function getDocument(connPool, doc) {
 export async function getDocuments(connPool, filters) {
     const client = await connPool.connect();
     const conditionArray = [];
-    if (filters != null) {
+    if (filters) {
         for (const dataField in filters) {
             if (dataField == 'filenames') {
                 conditionArray.push(SQL `metadata ->> 'fileId' IN (${SQL.map(filters[dataField], name => SQL.unsafe(`'${name}'`))})`);
@@ -52,7 +52,7 @@ export async function getDocuments(connPool, filters) {
     const q = SQL.glue([SQL `SELECT id, name, metadata FROM documents`, condition], ' WHERE ');
     const res = await client.query(q);
     await client.release();
-    return res.rows ?? [];
+    return res.rows ? res.rows : [];
 }
 export async function deleteDocument(connPool, id) {
     const client = await connPool.connect();
@@ -117,7 +117,7 @@ export async function searchByKeyword(connPool, keywords, options = { limit: 5 }
         SQL `SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE`,
-        SQL.glue([statement ?? SQL ``, SQL `to_tsvector('english', content)`], ' '),
+        SQL.glue([statement ? statement : SQL ``, SQL `to_tsvector('english', content)`], ' '),
         SQL `@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ], ' ');
     const res = await client.query(query);
