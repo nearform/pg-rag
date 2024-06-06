@@ -110,8 +110,12 @@ export async function init(options: PgRagOptions) {
     })
   }
 
-  const getDocuments = async (args: DocArgs) => {
-    return db.getDocument(options.dbPool, args)
+  const getDocuments = async (filters?: Record<string, string | string[]>) => {
+    return await db.getDocuments(options.dbPool, filters)
+  }
+
+  const getDocument = async (doc: DocArgs) => {
+    return await db.getDocument(options.dbPool, doc)
   }
 
   const rag = async (args: RagArgs) => {
@@ -121,7 +125,7 @@ export async function init(options: PgRagOptions) {
       model: options.chatModel
     })
   }
-  /* eslint-disable  @typescript-eslint/no-explicit-any */
+
   const summary = async (
     fileId: string,
     filters?: Record<string, string | string[]>
@@ -154,6 +158,7 @@ export async function init(options: PgRagOptions) {
     retrieve,
     rag,
     summary,
+    getDocument,
     getDocuments,
     waitForDocumentProcessed: jobQueue.waitForDocumentProcessed,
     pgBoss: jobQueue.pgBoss,

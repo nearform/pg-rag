@@ -2,7 +2,8 @@ import {
   loadSummarizationChain,
   SummarizationChainParams
 } from 'langchain/chains'
-import { LLM } from 'langchain/llms/base'
+import { LLM } from '@langchain/core/language_models/llms'
+import { PromptTemplate } from '@langchain/core/prompts'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 
 import { makePrompt } from './promptManipulation.js'
@@ -11,6 +12,8 @@ type SummarizationChainParamsExtended = SummarizationChainParams & {
   returnIntermediateSteps: boolean
   input_key: string
   output_key: string
+  questionPrompt: PromptTemplate
+  refinePrompt: PromptTemplate
 }
 
 export interface SummarizationConfig {
@@ -32,26 +35,22 @@ const refinePrompt = makePrompt('./prompts/summary_default_refined.txt', [
 const DEFAULT_CHUNK_SIZE = 2000
 const DEFAULT_CHUNK_OVERLAP = 2
 
-const DEFAULT_CONFIG: SummarizationConfig = {
-  chunkSize: DEFAULT_CHUNK_SIZE,
-  chunkOverlap: DEFAULT_CHUNK_OVERLAP,
-  chainParams: {
-    type: 'refine',
-    questionPrompt,
-    refinePrompt,
-    returnIntermediateSteps: true,
-    input_key: 'input_documents',
-    output_key: 'text'
-  }
-}
-
 export async function summarizeText(
   text: string,
   chatModel: LLM,
   config?: SummarizationConfig
 ) {
   const { chunkSize, chunkOverlap, chainParams } = {
-    ...DEFAULT_CONFIG,
+    chunkSize: DEFAULT_CHUNK_SIZE,
+    chunkOverlap: DEFAULT_CHUNK_OVERLAP,
+    chainParams: {
+      type: 'refine' as const,
+      questionPrompt,
+      refinePrompt,
+      returnIntermediateSteps: true,
+      input_key: 'input_documents',
+      output_key: 'text'
+    },
     ...config
   }
 
@@ -61,6 +60,9 @@ export async function summarizeText(
   })
   const docs = await textSplitter.createDocuments([text])
 
-  const chain = loadSummarizationChain(chatModel, chainParams)
+  const chain = loadSummarizationChain(
+    chatModel,
+    chainParams as SummarizationChainParams
+  )
   return await chain.invoke({ input_documents: docs })
 }
