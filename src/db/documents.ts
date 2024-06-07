@@ -178,7 +178,7 @@ export async function searchByKeyword(
   if (filter) {
     for (const f in filter) {
       if (typeof filter[f] == 'string') {
-        metadataData.push(SQL` metadata ->> ${f} = ${filter[f]} AND`)
+        metadataData.push(SQL` metadata ->> ${f} = ${filter[f]}`)
       } else if (f == 'filenames') {
         metadataData.push(
           SQL`metadata ->> 'fileId' IN (${SQL.map(filter[f] as string[], name => SQL.unsafe(`'${name}'`))})`
@@ -186,19 +186,18 @@ export async function searchByKeyword(
       }
     }
   }
-  const statement = metadataData.length
-    ? SQL.glue([...metadataData, SQL` AND `], ' ')
-    : undefined
+
+  const filters: SqlStatement[] = [
+    ...metadataData,
+    SQL`to_tsvector('english', content)`
+  ]
 
   const query = SQL.glue(
     [
       SQL`SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE`,
-      SQL.glue(
-        [statement ? statement : SQL``, SQL`to_tsvector('english', content)`],
-        ' '
-      ),
+      SQL.glue(filters, ' AND '),
       SQL`@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ],
     ' '
