@@ -133,10 +133,11 @@ function transformFilters(
   }
   let metadata: Metadata = {}
   for (const key in filters) {
-    if (key == 'filenames') {
-      metadata = { ...metadata, fileId: { $in: filters[key] } }
+    if (key === 'filenames') {
+      metadata = { ...metadata, fileId: { in: filters[key] } }
+    } else {
+      metadata = { ...metadata, [key]: filters[key] }
     }
-    metadata = { ...metadata, key: filters[key] }
   }
 
   return metadata
