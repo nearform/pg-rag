@@ -103,21 +103,22 @@ export async function searchByKeyword(connPool, keywords, options = { limit: 5 }
     if (filter) {
         for (const f in filter) {
             if (typeof filter[f] == 'string') {
-                metadataData.push(SQL ` metadata ->> ${f} = ${filter[f]} AND`);
+                metadataData.push(SQL ` metadata ->> ${f} = ${filter[f]}`);
             }
             else if (f == 'filenames') {
                 metadataData.push(SQL `metadata ->> 'fileId' IN (${SQL.map(filter[f], name => SQL.unsafe(`'${name}'`))})`);
             }
         }
     }
-    const statement = metadataData.length
-        ? SQL.glue([...metadataData, SQL ` AND `], ' ')
-        : undefined;
+    const filters = [
+        ...metadataData,
+        SQL `to_tsvector('english', content)`
+    ];
     const query = SQL.glue([
         SQL `SELECT id, content, metadata, ts_rank(to_tsvector('english', content), query) AS score
   FROM document_chunks, plainto_tsquery('english', ${keywords}) as query
   WHERE`,
-        SQL.glue([statement ? statement : SQL ``, SQL `to_tsvector('english', content)`], ' '),
+        SQL.glue(filters, ' AND '),
         SQL `@@ query ORDER BY score DESC LIMIT ${options.limit};`
     ], ' ');
     const res = await client.query(query);
