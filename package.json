@@ -47,7 +47,7 @@
     "*.{ts,tsx}": "eslint --cache --fix"
   },
   "dependencies": {
-    "@langchain/community": "^0.2.5",
+    "@langchain/community": "^0.2.9",
     "@langchain/openai": "^0.1.2",
     "@nearform/sql": "^1.10.5",
     "file-type": "^19.0.0",
