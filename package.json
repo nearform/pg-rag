@@ -41,7 +41,7 @@
     "ts-jest": "^29.1.4",
     "tsx": "^4.15.6",
     "typescript": "^5.4.5",
-    "typescript-eslint": "^7.13.0"
+    "typescript-eslint": "^7.13.1"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix"
