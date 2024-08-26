@@ -39,7 +39,7 @@
     "lint-staged": "^15.2.8",
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.4",
-    "tsx": "^4.17.0",
+    "tsx": "^4.18.0",
     "typescript": "^5.5.4",
     "typescript-eslint": "^7.17.0"
   },
