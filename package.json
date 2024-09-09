@@ -50,7 +50,7 @@
     "@langchain/community": "^0.2.32",
     "@langchain/openai": "^0.2.8",
     "@nearform/sql": "^1.10.5",
-    "file-type": "^19.4.1",
+    "file-type": "^19.5.0",
     "langchain": "^0.2.18",
     "mysql2-promise": "^0.1.4",
     "office-to-pdf": "^4.0.0",
