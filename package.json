@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@langchain/community": "^0.3.29",
-    "@langchain/openai": "^0.3.17",
+    "@langchain/openai": "^0.4.4",
     "@nearform/sql": "^1.10.5",
     "file-type": "^20.1.0",
     "langchain": "^0.3.15",
